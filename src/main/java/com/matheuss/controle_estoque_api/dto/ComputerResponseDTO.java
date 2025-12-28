@@ -1,17 +1,19 @@
 package com.matheuss.controle_estoque_api.dto;
 
-import java.time.LocalDate;
-
-import com.matheuss.controle_estoque_api.domain.AssetStatus;
-
+// Import corrigido para usar o enum unificado
+import com.matheuss.controle_estoque_api.domain.enums.AssetStatus; 
 import lombok.Data;
+import java.time.LocalDate;
 
 @Data
 public class ComputerResponseDTO {
     private Long id;
     private String assetTag;
     private LocalDate purchaseDate;
-    private AssetStatus status;
+    
+    // Campo corrigido para usar o tipo AssetStatus
+    private AssetStatus status; 
+    
     private String notes;
     private String name;
     private String serialNumber;
@@ -19,9 +21,7 @@ public class ComputerResponseDTO {
     private Integer ramSizeInGB;
     private Integer storageSizeInGB;
     private String os;
-
-    // AQUI ESTÁ A MUDANÇA CRUCIAL:
-    // Usamos os DTOs simples para evitar problemas de serialização e referências circulares.
-    private CategorySimpleResponseDTO category;
-    private SupplierSimpleResponseDTO supplier;
+    
+    private CategoryResponseDTO category;
+    private SupplierResponseDTO supplier;
 }
