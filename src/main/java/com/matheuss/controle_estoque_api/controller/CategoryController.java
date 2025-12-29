@@ -1,45 +1,62 @@
 package com.matheuss.controle_estoque_api.controller;
 
-import com.matheuss.controle_estoque_api.domain.Category;
+import com.matheuss.controle_estoque_api.dto.CategoryCreateDTO;
+import com.matheuss.controle_estoque_api.dto.CategoryResponseDTO;
+import com.matheuss.controle_estoque_api.dto.CategoryUpdateDTO;
 import com.matheuss.controle_estoque_api.service.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/categories" )
+@RequestMapping("/api/categories" )
 public class CategoryController {
 
     @Autowired
     private CategoryService categoryService;
 
-    /**
-     * Endpoint para LISTAR TODAS as categorias.
-     * Mapeia requisições HTTP GET para /categories.
-     */
-    @GetMapping
-    public ResponseEntity<List<Category>> getAllCategories() {
-        List<Category> categories = categoryService.findAll();
-        return ResponseEntity.ok(categories);
+    // CREATE
+    @PostMapping
+    public ResponseEntity<CategoryResponseDTO> createCategory(@RequestBody CategoryCreateDTO dto) {
+        CategoryResponseDTO createdCategory = categoryService.createCategory(dto);
+        URI locationUri = ServletUriComponentsBuilder.fromCurrentRequest().path("/{id}")
+                .buildAndExpand(createdCategory.getId()).toUri();
+        return ResponseEntity.created(locationUri).body(createdCategory);
     }
 
-    /**
-     * Endpoint para CRIAR UMA NOVA categoria.
-     * Mapeia requisições HTTP POST para /categories.
-     */
-    @PostMapping
-    public ResponseEntity<Category> createCategory(@RequestBody Category category) {
-        // 1. Salva a nova categoria usando o serviço.
-        Category savedCategory = categoryService.save(category);
-        
-        // 2. Cria a URL para o novo recurso (ex: /categories/1).
-        //    AQUI ESTAVA O ERRO: Usamos a variável 'savedCategory' e chamamos o método '.getId()' nela.
-        URI location = URI.create("/categories/" + savedCategory.getId());
-        
-        // 3. Retorna a resposta 201 Created com a localização e o objeto salvo.
-        return ResponseEntity.created(location).body(savedCategory);
+    // READ (ALL)
+    @GetMapping
+    public ResponseEntity<List<CategoryResponseDTO>> getAllCategories() {
+        return ResponseEntity.ok(categoryService.findAllCategories());
+    }
+
+    // READ (BY ID)
+    @GetMapping("/{id}")
+    public ResponseEntity<CategoryResponseDTO> getCategoryById(@PathVariable("id") Long id) {
+        return categoryService.findCategoryById(id)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // UPDATE
+    @PutMapping("/{id}")
+    public ResponseEntity<CategoryResponseDTO> updateCategory(@PathVariable("id") Long id, @RequestBody CategoryUpdateDTO dto) {
+        return categoryService.updateCategory(id, dto)
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.notFound().build());
+    }
+
+    // DELETE
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteCategory(@PathVariable("id") Long id) {
+        if (categoryService.deleteCategory(id)) {
+            return ResponseEntity.noContent().build();
+        } else {
+            return ResponseEntity.notFound().build();
+        }
     }
 }

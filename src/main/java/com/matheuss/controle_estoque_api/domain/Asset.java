@@ -6,6 +6,7 @@ import jakarta.persistence.DiscriminatorColumn;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -47,4 +48,9 @@ public abstract class Asset {
     @ManyToOne
     @JoinColumn(name = "supplier_id")
     private Supplier supplier; // Fornecedor
+
+    @ManyToOne(fetch = FetchType.LAZY) // LAZY é bom para performance
+    @JoinColumn(name = "location_id") // Nome da coluna de chave estrangeira na tabela 'assets'
+     private Location location;
+
 }

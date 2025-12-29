@@ -1,25 +1,24 @@
 package com.matheuss.controle_estoque_api.dto;
 
-// Import corrigido para usar o enum unificado
 import com.matheuss.controle_estoque_api.domain.enums.AssetStatus;
 import lombok.Data;
 import java.time.LocalDate;
 
 @Data
 public class ComputerUpdateDTO {
+    // Certifique-se de que todos estes campos existem no seu arquivo.
+    // O importante é adicionar o locationId.
     private String assetTag;
-    private LocalDate purchaseDate;
-    
-    // Campo corrigido para usar o tipo AssetStatus
     private AssetStatus status;
-    
-    private String notes;
+    private LocalDate purchaseDate;
     private Long supplierId;
+    private Long categoryId;
+    private Long locationId; // <-- ADICIONE ESTA LINHA
+
     private String name;
     private String serialNumber;
     private String cpu;
-    private Integer ramSizeInGB;
-    private Integer storageSizeInGB;
+    private int ramSizeInGB;
+    private int storageSizeInGB;
     private String os;
-    private Long categoryId;
 }
