@@ -8,8 +8,10 @@ import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingTarget;
 
-// A mágica está aqui: adicionamos ReferenceMapper.class à propriedade 'uses'
-@Mapper(componentModel = "spring", uses = {ReferenceMapper.class})
+@Mapper(componentModel = "spring", uses = {
+    ReferenceMapper.class,
+    ComponentMapper.class // Essencial para o mapeamento da lista
+})
 public interface ComputerMapper {
 
     @Mapping(source = "categoryId", target = "category")
@@ -17,6 +19,7 @@ public interface ComputerMapper {
     @Mapping(source = "locationId", target = "location")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "notes", ignore = true)
+    @Mapping(target = "components", ignore = true)
     Computer toEntity(ComputerCreateDTO dto);
 
     @Mapping(source = "categoryId", target = "category")
@@ -24,9 +27,12 @@ public interface ComputerMapper {
     @Mapping(source = "locationId", target = "location")
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "notes", ignore = true)
+    @Mapping(target = "components", ignore = true)
     void updateEntityFromDto(ComputerUpdateDTO dto, @MappingTarget Computer computer);
 
-    // Para o DTO de resposta, não precisamos do ReferenceMapper,
-    // mas o MapStruct é inteligente o suficiente para não usá-lo aqui.
+    // --- CORREÇÃO PRINCIPAL AQUI ---
+    // Adicionamos um @Mapping explícito para a lista de componentes.
+    // Isso força o MapStruct a usar o ComponentMapper para converter cada item.
+    @Mapping(source = "components", target = "components")
     ComputerResponseDTO toResponseDTO(Computer computer);
 }

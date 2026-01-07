@@ -1,12 +1,12 @@
 package com.matheuss.controle_estoque_api.domain;
 
-import jakarta.persistence.DiscriminatorValue;
-import jakarta.persistence.Entity;
-import jakarta.persistence.FetchType;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @DiscriminatorValue("COMPUTER")
@@ -24,4 +24,10 @@ public class Computer extends Asset {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
+
+    // --- NOVO RELACIONAMENTO BIDIRECIONAL (APENAS COMPONENTES) ---
+
+    @OneToMany(mappedBy = "computer", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore // Essencial para evitar loops
+    private List<Component> components = new ArrayList<>();
 }

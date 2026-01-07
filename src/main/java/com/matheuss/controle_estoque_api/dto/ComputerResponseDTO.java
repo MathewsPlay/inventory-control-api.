@@ -2,7 +2,9 @@ package com.matheuss.controle_estoque_api.dto;
 
 import com.matheuss.controle_estoque_api.domain.enums.AssetStatus;
 import lombok.Data;
+
 import java.time.LocalDate;
+import java.util.List;
 
 @Data
 public class ComputerResponseDTO {
@@ -17,8 +19,11 @@ public class ComputerResponseDTO {
     private int storageSizeInGB;
     private String os;
 
-    // DTOs aninhados para os relacionamentos
+    // Relacionamentos
     private CategoryResponseDTO category;
     private SupplierResponseDTO supplier;
-    private LocationResponseDTO location; // <-- CAMPO NOVO
+    private LocationResponseDTO location;
+
+    // --- NOVA LISTA DE COMPONENTES INTERNOS ---
+    private List<ComponentResponseDTO> components;
 }
