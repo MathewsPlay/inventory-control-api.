@@ -22,7 +22,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy; // <<< IMPORT NECESSÁRIO
 public interface PeripheralMapper {
 
     // --- MAPEAMENTO PARA ENTIDADE (CRIAÇÃO) ---
-    @Mapping(source = "supplierId", target = "supplier")
+   
     @Mapping(source = "locationId", target = "location")
     @Mapping(source = "computerId", target = "computer")
     @Mapping(target = "id", ignore = true)
@@ -32,7 +32,7 @@ public interface PeripheralMapper {
     Peripheral toEntity(PeripheralCreateDTO dto);
 
     // --- MAPEAMENTO PARA ENTIDADE (ATUALIZAÇÃO) ---
-    @Mapping(source = "supplierId", target = "supplier")
+    
     @Mapping(source = "locationId", target = "location")
     @Mapping(source = "computerId", target = "computer")
     @Mapping(target = "user", ignore = true)

@@ -19,7 +19,6 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 )
 public interface ComponentMapper {
 
-    @Mapping(source = "supplierId", target = "supplier")
     @Mapping(source = "locationId", target = "location")
     @Mapping(source = "categoryId", target = "category")
     @Mapping(source = "computerId", target = "computer")
@@ -29,7 +28,6 @@ public interface ComponentMapper {
     @Mapping(target = "user", ignore = true) // <<< CORREÇÃO ADICIONADA
     Component toEntity(ComponentCreateDTO dto);
 
-    @Mapping(source = "supplierId", target = "supplier")
     @Mapping(source = "locationId", target = "location")
     @Mapping(source = "categoryId", target = "category")
     @Mapping(source = "computerId", target = "computer")

@@ -3,13 +3,12 @@ package com.matheuss.controle_estoque_api.mapper;
 import com.matheuss.controle_estoque_api.domain.Category;
 import com.matheuss.controle_estoque_api.domain.Computer;
 import com.matheuss.controle_estoque_api.domain.Location;
-import com.matheuss.controle_estoque_api.domain.Supplier;
 import com.matheuss.controle_estoque_api.domain.User; // Import necessário
 import com.matheuss.controle_estoque_api.dto.UserSimpleResponseDTO; // Import necessário
 import com.matheuss.controle_estoque_api.repository.CategoryRepository;
 import com.matheuss.controle_estoque_api.repository.ComputerRepository;
 import com.matheuss.controle_estoque_api.repository.LocationRepository;
-import com.matheuss.controle_estoque_api.repository.SupplierRepository;
+
 import jakarta.persistence.EntityNotFoundException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -20,8 +19,6 @@ public class ReferenceMapper {
     @Autowired
     private CategoryRepository categoryRepository;
     @Autowired
-    private SupplierRepository supplierRepository;
-    @Autowired
     private LocationRepository locationRepository;
     @Autowired
     private ComputerRepository computerRepository;
@@ -30,12 +27,6 @@ public class ReferenceMapper {
         if (categoryId == null) return null;
         return categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o ID: " + categoryId));
-    }
-
-    public Supplier toSupplier(Long supplierId) {
-        if (supplierId == null) return null;
-        return supplierRepository.findById(supplierId)
-                .orElseThrow(() -> new EntityNotFoundException("Fornecedor não encontrado com o ID: " + supplierId));
     }
 
     public Location toLocation(Long locationId) {

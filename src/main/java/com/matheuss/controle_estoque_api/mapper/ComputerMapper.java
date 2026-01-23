@@ -16,7 +16,7 @@ import org.mapstruct.NullValuePropertyMappingStrategy;
 )
 public interface ComputerMapper {
 
-    @Mapping(source = "supplierId", target = "supplier")
+    
     @Mapping(source = "categoryId", target = "category")
     @Mapping(source = "locationId", target = "location")
     @Mapping(target = "id", ignore = true)
@@ -30,7 +30,7 @@ public interface ComputerMapper {
     @Mapping(target = "user", ignore = true)
     Computer toEntity(ComputerCreateDTO dto);
   
-    @Mapping(source = "supplierId", target = "supplier")
+   
     @Mapping(source = "categoryId", target = "category")
     @Mapping(source = "locationId", target = "location")
     @Mapping(target = "id", ignore = true)

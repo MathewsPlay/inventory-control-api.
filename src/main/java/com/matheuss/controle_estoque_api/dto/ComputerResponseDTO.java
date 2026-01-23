@@ -18,7 +18,6 @@ public class ComputerResponseDTO {
     private String notes;
 
     // DTOs aninhados para relacionamentos
-    private SupplierResponseDTO supplier;
     private LocationResponseDTO location;
     private CategoryResponseDTO category;
     private List<ComponentResponseDTO> components;

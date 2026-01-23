@@ -22,7 +22,6 @@ public class PeripheralResponseDTO {
     private String serialNumber;
 
     // Relacionamentos como objetos completos
-    private SupplierResponseDTO supplier;
     private LocationResponseDTO location;
     private ComputerSimpleResponseDTO computer; // Usaremos um DTO simples para evitar loops
 

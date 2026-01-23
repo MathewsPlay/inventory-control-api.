@@ -16,7 +16,6 @@ public class ComponentResponseDTO {
     private String model;
     private String serialNumber;
     private CategoryResponseDTO category;
-    private SupplierResponseDTO supplier;
     private LocationResponseDTO location;
 
      private UserSimpleResponseDTO user;

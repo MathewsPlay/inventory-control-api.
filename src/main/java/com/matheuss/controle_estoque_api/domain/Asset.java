@@ -46,10 +46,6 @@ public abstract class Asset {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
-    @ManyToOne
-    @JoinColumn(name = "supplier_id", nullable = false)
-    private Supplier supplier;
-
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id")
     private Location location;

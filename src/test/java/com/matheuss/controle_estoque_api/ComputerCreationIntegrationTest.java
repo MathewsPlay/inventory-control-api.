@@ -5,7 +5,6 @@ import com.matheuss.controle_estoque_api.domain.enums.AssetStatus;
 import com.matheuss.controle_estoque_api.domain.enums.EquipmentState;
 import com.matheuss.controle_estoque_api.dto.CategoryCreateDTO;
 import com.matheuss.controle_estoque_api.dto.ComputerCreateDTO;
-import com.matheuss.controle_estoque_api.dto.SupplierCreateDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -43,15 +42,6 @@ public class ComputerCreationIntegrationTest {
                         .content(objectMapper.writeValueAsString(categoryDTO)))
                 .andExpect(status().isCreated());
 
-        // 2. Criar Fornecedor
-        SupplierCreateDTO supplierDTO = new SupplierCreateDTO();
-        supplierDTO.setName("Fornecedor de Teste");
-        supplierDTO.setCnpj("00.000.000/0001-00");
-
-        mockMvc.perform(post("/api/suppliers")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(supplierDTO)))
-                .andExpect(status().isCreated());
 
         // 3. Criar Computador
         ComputerCreateDTO computerDTO = new ComputerCreateDTO();
@@ -59,7 +49,6 @@ public class ComputerCreationIntegrationTest {
         computerDTO.setStatus(AssetStatus.EM_ESTOQUE);
         computerDTO.setEquipmentState(EquipmentState.NOVO);
         computerDTO.setPurchaseDate(LocalDate.now());
-        computerDTO.setSupplierId(1L);
         computerDTO.setCategoryId(1L);
         computerDTO.setNotes("Teste de integração.");
         computerDTO.setName("Computador de Teste");
