@@ -11,7 +11,6 @@ import java.util.List;
 public interface AssetHistoryMapper {
 
     @Mapping(source = "eventType.description", target = "eventType")
-    @Mapping(source = "associatedUser", target = "associatedUser")
     AssetHistoryResponseDTO toResponseDTO(AssetHistory assetHistory);
 
     List<AssetHistoryResponseDTO> toResponseDTOList(List<AssetHistory> assetHistoryList);
