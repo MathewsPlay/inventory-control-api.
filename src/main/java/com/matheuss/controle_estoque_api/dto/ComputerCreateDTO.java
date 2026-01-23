@@ -23,9 +23,6 @@ public class ComputerCreateDTO {
     @NotNull(message = "A data de compra é obrigatória.")
     private LocalDate purchaseDate;
 
-    @NotNull(message = "O ID do fornecedor (supplierId) é obrigatório.")
-    private Long supplierId;
-
     private Long locationId;
 
     private String notes;

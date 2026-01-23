@@ -1,3 +1,4 @@
+
 package com.matheuss.controle_estoque_api.exception;
 
 import jakarta.persistence.EntityNotFoundException;

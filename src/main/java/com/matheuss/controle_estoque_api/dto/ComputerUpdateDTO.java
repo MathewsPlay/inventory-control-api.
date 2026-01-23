@@ -11,7 +11,6 @@ public class ComputerUpdateDTO {
     private String assetTag;
     private AssetStatus status;
     private LocalDate purchaseDate;
-    private Long supplierId;
     private Long categoryId;
     private Long locationId;
 

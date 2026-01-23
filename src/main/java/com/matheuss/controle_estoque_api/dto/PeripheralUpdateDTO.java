@@ -11,7 +11,6 @@ public class PeripheralUpdateDTO {
     private String assetTag;
     private AssetStatus status;
     private LocalDate purchaseDate;
-    private Long supplierId;
     private Long locationId;
 
     private String type;

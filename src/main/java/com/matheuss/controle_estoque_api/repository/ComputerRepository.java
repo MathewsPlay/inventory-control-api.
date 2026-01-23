@@ -14,19 +14,14 @@ import com.matheuss.controle_estoque_api.domain.Computer;
 @Repository
 public interface ComputerRepository extends JpaRepository<Computer, Long> {
 
-    /**
-     * Busca todos os computadores, trazendo (FETCH) os relacionamentos
-     * category e supplier na mesma consulta para evitar o problema N+1 e LazyInitializationException.
-     * O 'LEFT JOIN' é usado para o supplier, pois ele pode ser nulo.
-     */
     @NonNull
-    @Query("SELECT c FROM Computer c JOIN FETCH c.category LEFT JOIN FETCH c.supplier")
+    @Query("SELECT c FROM Computer c JOIN FETCH c.category")
     List<Computer> findAllWithDetails(); // <-- MÉTODO RENOMEADO
 
     /**
      * Busca um computador por ID, também trazendo os relacionamentos
      * na mesma consulta.
      */
-    @Query("SELECT c FROM Computer c JOIN FETCH c.category LEFT JOIN FETCH c.supplier WHERE c.id = :id")
+    @Query("SELECT c FROM Computer c JOIN FETCH c.category WHERE c.id = :id")
     Optional<Computer> findByIdWithDetails(@Param("id") Long id);
 }
