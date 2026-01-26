@@ -1,51 +1,38 @@
 package com.matheuss.controle_estoque_api.mapper;
 
-import com.matheuss.controle_estoque_api.domain.Computer;
 import com.matheuss.controle_estoque_api.domain.Peripheral;
-import com.matheuss.controle_estoque_api.domain.User;
-import com.matheuss.controle_estoque_api.dto.ComputerSimpleResponseDTO;
 import com.matheuss.controle_estoque_api.dto.PeripheralCreateDTO;
 import com.matheuss.controle_estoque_api.dto.PeripheralResponseDTO;
 import com.matheuss.controle_estoque_api.dto.PeripheralUpdateDTO;
-import com.matheuss.controle_estoque_api.dto.UserSimpleResponseDTO;
+import org.mapstruct.*;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy; // <<< IMPORT NECESSÁRIO
+import java.util.List;
 
 @Mapper(
-    componentModel = "spring",
-    uses = { ReferenceMapper.class },
-    nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE // <<< CORREÇÃO FINAL
+        componentModel = "spring",
+        uses = {LocationMapper.class, CollaboratorMapper.class, ComputerSimpleMapper.class}
 )
 public interface PeripheralMapper {
 
-    // --- MAPEAMENTO PARA ENTIDADE (CRIAÇÃO) ---
-   
-    @Mapping(source = "locationId", target = "location")
-    @Mapping(source = "computerId", target = "computer")
     @Mapping(target = "id", ignore = true)
+    @Mapping(target = "location", ignore = true)  // service resolve por locationId
+    @Mapping(target = "computer", ignore = true)  // service resolve por computerId
     @Mapping(target = "user", ignore = true)
+    @Mapping(target = "history", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
     Peripheral toEntity(PeripheralCreateDTO dto);
 
-    // --- MAPEAMENTO PARA ENTIDADE (ATUALIZAÇÃO) ---
-    
-    @Mapping(source = "locationId", target = "location")
-    @Mapping(source = "computerId", target = "computer")
+    PeripheralResponseDTO toResponseDTO(Peripheral entity);
+
+    List<PeripheralResponseDTO> toResponseDTOList(List<Peripheral> list);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "location", ignore = true)
+    @Mapping(target = "computer", ignore = true)
     @Mapping(target = "user", ignore = true)
-    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "history", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
-    void updateEntityFromDto(PeripheralUpdateDTO dto, @MappingTarget Peripheral peripheral);
-
-    // --- MAPEAMENTO PARA DTO DE RESPOSTA ---
-    PeripheralResponseDTO toResponseDTO(Peripheral peripheral);
-
-    // --- MAPEAMENTO AUXILIAR ---
-    ComputerSimpleResponseDTO toComputerSimpleDTO(Computer computer);
-
-     
+    void updateEntityFromDto(PeripheralUpdateDTO dto, @MappingTarget Peripheral entity);
 }

@@ -1,7 +1,7 @@
 package com.matheuss.controle_estoque_api.domain.history;
 
 import com.matheuss.controle_estoque_api.domain.Asset;
-import com.matheuss.controle_estoque_api.domain.User;
+import com.matheuss.controle_estoque_api.domain.Collaborator;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -36,13 +36,13 @@ public class AssetHistory {
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "associated_user_id")
-    private User associatedUser;
+    private Collaborator associatedUser;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime eventDate;
 
-    public AssetHistory(Asset asset, HistoryEventType eventType, String details, User associatedUser) {
+    public AssetHistory(Asset asset, HistoryEventType eventType, String details, Collaborator associatedUser) {
         this.asset = asset;
         this.eventType = eventType;
         this.details = details;

@@ -2,7 +2,7 @@ package com.matheuss.controle_estoque_api.domain;
 
 import com.matheuss.controle_estoque_api.domain.enums.AssetStatus;
 import com.matheuss.controle_estoque_api.domain.enums.EquipmentState;
-import com.matheuss.controle_estoque_api.domain.history.AssetHistory; // <-- IMPORT ADICIONADO
+import com.matheuss.controle_estoque_api.domain.history.AssetHistory;
 import jakarta.persistence.*;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -13,8 +13,8 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList; // <-- IMPORT ADICIONADO
-import java.util.List;      // <-- IMPORT ADICIONADO
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "asset")
@@ -46,15 +46,43 @@ public abstract class Asset {
     @Column(columnDefinition = "TEXT")
     private String notes;
 
+    // =======================
+    // CAMPOS ADMINISTRATIVOS 
+    // =======================
+    private LocalDate dataRecebimento;
+
+    private String chamadoCompra;
+
+    private String sc;
+
+    private String pedido;
+
+    private String nf;
+
+    private String centroCusto;
+
+    // ===========================
+    // CAMPOS DO CONTROLE (JIRA)
+    // ===========================
+    private String ticketJira;
+
+    // Usado apenas quando o ativo foi emprestado para colaborador (home office) e devolvido
+    private String ticketDevolucaoJira;
+
+    // ===========================
+    // RELACIONAMENTOS
+    // ===========================
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id")
     private Location location;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    private User user;
+    @JoinColumn(name = "collaborator_id")
+    private Collaborator collaborator;
 
-    // --- CAMPOS DE AUDITORIA ---
+    // ===========================
+    // AUDITORIA
+    // ===========================
     @CreatedDate
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -63,16 +91,9 @@ public abstract class Asset {
     @Column(nullable = false)
     private LocalDateTime updatedAt;
 
-    // ====================================================================
-    // == NOVA IMPLEMENTAÇÃO: RELACIONAMENTO COM O HISTÓRICO DE EVENTOS ==
-    // Define o lado "um" do relacionamento "um-para-muitos" com AssetHistory.
-    // mappedBy = "asset": Indica que a entidade AssetHistory é a dona do relacionamento
-    //                     e possui o campo "asset" com a anotação @ManyToOne.
-    // cascade = CascadeType.ALL: Garante que as operações (criar, deletar) no Asset
-    //                            sejam propagadas para seus registros de histórico.
-    // orphanRemoval = true: Se um registro de histórico for removido desta lista,
-    //                       ele será deletado do banco de dados.
-    // ====================================================================
+    // ===========================
+    // HISTÓRICO
+    // ===========================
     @OneToMany(mappedBy = "asset", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<AssetHistory> history = new ArrayList<>();
 }

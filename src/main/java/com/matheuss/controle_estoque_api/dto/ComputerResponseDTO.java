@@ -1,10 +1,11 @@
 package com.matheuss.controle_estoque_api.dto;
 
 import com.matheuss.controle_estoque_api.domain.enums.AssetStatus;
-import com.matheuss.controle_estoque_api.domain.enums.EquipmentState; 
+import com.matheuss.controle_estoque_api.domain.enums.EquipmentState;
 import lombok.Data;
+
 import java.time.LocalDate;
-import java.time.LocalDateTime; 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
@@ -17,12 +18,24 @@ public class ComputerResponseDTO {
     private LocalDate purchaseDate;
     private String notes;
 
-    // DTOs aninhados para relacionamentos
+    // CAMPOS ADMINISTRATIVOS (EXCEL)
+    private LocalDate dataRecebimento;
+    private String chamadoCompra;
+    private String sc;
+    private String pedido;
+    private String nf;
+    private String centroCusto;
+
+    // JIRA (CONTROLE)
+    private String ticketJira;
+    private String ticketDevolucaoJira;
+
+    // RELACIONAMENTOS
     private LocationResponseDTO location;
     private CategoryResponseDTO category;
     private List<ComponentResponseDTO> components;
 
-    // Campos específicos de Computer
+    // CAMPOS ESPECÍFICOS
     private String name;
     private String serialNumber;
     private String cpu;
@@ -30,15 +43,13 @@ public class ComputerResponseDTO {
     private int storageSizeInGB;
     private String os;
 
-    // Campos de Auditoria
+    // AUDITORIA
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
-    
-    // Usuário ao qual o ativo está alocado
-    private UserSimpleResponseDTO user;
 
-    // ====================================================================
-    // == NOVO CAMPO: LISTA COM O HISTÓRICO DE EVENTOS DO ATIVO ==
-    // ====================================================================
+    // COLABORADOR
+    private CollaboratorSimpleResponseDTO user;
+
+    // HISTÓRICO
     private List<AssetHistoryResponseDTO> history;
 }

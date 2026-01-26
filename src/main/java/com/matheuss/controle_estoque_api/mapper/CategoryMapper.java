@@ -3,19 +3,17 @@ package com.matheuss.controle_estoque_api.mapper;
 import com.matheuss.controle_estoque_api.domain.Category;
 import com.matheuss.controle_estoque_api.dto.CategoryCreateDTO;
 import com.matheuss.controle_estoque_api.dto.CategoryResponseDTO;
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.factory.Mappers;
+import com.matheuss.controle_estoque_api.dto.CategoryUpdateDTO;
+import org.mapstruct.*;
 
 @Mapper(componentModel = "spring")
 public interface CategoryMapper {
 
-    CategoryMapper INSTANCE = Mappers.getMapper(CategoryMapper.class);
-
-    // Converte Entidade para DTO de Resposta
-    CategoryResponseDTO toResponseDTO(Category category);
-
-    // Converte DTO de Criação para Entidade
-    @Mapping(target = "id", ignore = true) // <-- ADICIONE ESTA LINHA
+    @Mapping(target = "id", ignore = true)
     Category toEntity(CategoryCreateDTO dto);
+
+    CategoryResponseDTO toResponseDTO(Category entity);
+
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateEntityFromDto(CategoryUpdateDTO dto, @MappingTarget Category entity);
 }

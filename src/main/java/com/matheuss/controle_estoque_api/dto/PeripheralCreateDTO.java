@@ -5,31 +5,42 @@ import com.matheuss.controle_estoque_api.domain.enums.EquipmentState;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
+
 import java.time.LocalDate;
 
 @Data
 public class PeripheralCreateDTO {
 
-    // --- Campos herdados de Asset ---
     @NotBlank(message = "A etiqueta do ativo (assetTag) é obrigatória.")
     private String assetTag;
 
-    @NotNull(message = "O status do ativo é obrigatório.")
+    // Pode vir nulo (backend define EM_ESTOQUE)
     private AssetStatus status;
 
     @NotNull(message = "O estado do equipamento é obrigatório.")
-    private EquipmentState equipmentState; // <<< CAMPO ADICIONADO
+    private EquipmentState equipmentState;
 
     @NotNull(message = "A data de compra é obrigatória.")
     private LocalDate purchaseDate;
 
     private Long locationId;
+    private String notes;
 
-    private String notes; // <<< CAMPO ADICIONADO
+    // CAMPOS ADMINISTRATIVOS (EXCEL)
+    private LocalDate dataRecebimento;
+    private String chamadoCompra;
+    private String sc;
+    private String pedido;
+    private String nf;
+    private String centroCusto;
 
-    // --- Campos específicos de Peripheral ---
+    // JIRA (CONTROLE)
+    private String ticketJira;
+    private String ticketDevolucaoJira;
+
+    // CAMPOS ESPECÍFICOS
     @NotBlank(message = "O tipo do periférico é obrigatório.")
-    private String type; // Ex: "Mouse", "Teclado", "Monitor"
+    private String type;
 
     @NotBlank(message = "O nome do periférico é obrigatório.")
     private String name;
@@ -39,6 +50,5 @@ public class PeripheralCreateDTO {
     @NotBlank(message = "O número de série é obrigatório.")
     private String serialNumber;
 
-    // --- Relacionamento opcional com Computer ---
     private Long computerId;
 }

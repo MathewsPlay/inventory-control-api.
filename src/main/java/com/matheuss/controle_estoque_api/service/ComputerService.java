@@ -1,84 +1,84 @@
 package com.matheuss.controle_estoque_api.service;
 
 import com.matheuss.controle_estoque_api.domain.Computer;
-import com.matheuss.controle_estoque_api.domain.history.HistoryEventType; // <-- IMPORT ADICIONADO
+import com.matheuss.controle_estoque_api.domain.enums.AssetStatus;
+import com.matheuss.controle_estoque_api.domain.history.HistoryEventType;
 import com.matheuss.controle_estoque_api.dto.ComputerCreateDTO;
 import com.matheuss.controle_estoque_api.dto.ComputerResponseDTO;
 import com.matheuss.controle_estoque_api.dto.ComputerUpdateDTO;
 import com.matheuss.controle_estoque_api.mapper.ComputerMapper;
 import com.matheuss.controle_estoque_api.repository.ComputerRepository;
+import com.matheuss.controle_estoque_api.service.support.EntityResolver;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class ComputerService {
 
-    @Autowired
-    private ComputerRepository computerRepository;
-
-    @Autowired
-    private ComputerMapper computerMapper;
-
-    // ====================================================================
-    // == PASSO 1: INJETAR O SERVIÇO DE HISTÓRICO ==
-    // ====================================================================
-    @Autowired
-    private AssetHistoryService assetHistoryService;
+    private final ComputerRepository computerRepository;
+    private final ComputerMapper computerMapper;
+    private final AssetHistoryService assetHistoryService;
+    private final EntityResolver resolver;
 
     @Transactional
     public ComputerResponseDTO createComputer(ComputerCreateDTO dto) {
-        Computer newComputer = computerMapper.toEntity(dto);
-        
-        // Salva o novo computador no banco para que ele tenha um ID
-        Computer savedComputer = computerRepository.save(newComputer);
+        Computer entity = computerMapper.toEntity(dto);
 
-        // ====================================================================
-        // == PASSO 2: REGISTRAR O EVENTO DE CRIAÇÃO NO HISTÓRICO ==
-        // O usuário associado é 'null' porque o ativo está apenas sendo cadastrado.
-        // ====================================================================
-        assetHistoryService.registerEvent(savedComputer, HistoryEventType.CRIACAO, "Ativo cadastrado no sistema.", null);
+        // Resolver relacionamentos aqui (sem mapper buscar no banco)
+        entity.setCategory(resolver.requireCategory(dto.getCategoryId()));
+        entity.setLocation(resolver.optionalLocation(dto.getLocationId()));
 
-        // Retorna o DTO do computador salvo, que agora já contém o evento de criação em sua lista de histórico
-        return computerMapper.toResponseDTO(savedComputer);
+        // Cadastro entra como EM_ESTOQUE (movimentação é outro caso de uso)
+        entity.setStatus(AssetStatus.EM_ESTOQUE);
+        entity.setUser(null);
+
+        Computer saved = computerRepository.save(entity);
+
+        assetHistoryService.registerEvent(saved, HistoryEventType.CRIACAO, "Ativo cadastrado no sistema.", null);
+        return computerMapper.toResponseDTO(saved);
     }
 
     @Transactional(readOnly = true)
     public List<ComputerResponseDTO> getAllComputers() {
-        return computerRepository.findAll().stream()
-                .map(computerMapper::toResponseDTO)
-                .collect(Collectors.toList());
+        return computerMapper.toResponseDTOList(computerRepository.findAllWithDetails());
     }
 
     @Transactional(readOnly = true)
     public ComputerResponseDTO getComputerById(Long id) {
-        return computerRepository.findById(id)
-                .map(computerMapper::toResponseDTO)
+        Computer entity = computerRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new EntityNotFoundException("Computador não encontrado com o ID: " + id));
+        return computerMapper.toResponseDTO(entity);
     }
-    
+
     @Transactional
-    public ComputerResponseDTO updateComputer(Long id, ComputerUpdateDTO updateDTO) {
-        Computer existingComputer = computerRepository.findById(id)
+    public ComputerResponseDTO updateComputer(Long id, ComputerUpdateDTO dto) {
+        Computer entity = computerRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Computador não encontrado com o ID: " + id));
 
-        computerMapper.updateEntityFromDto(updateDTO, existingComputer);
+        // Atualiza campos simples
+        computerMapper.updateEntityFromDto(dto, entity);
 
-        Computer updatedComputer = computerRepository.save(existingComputer);
+        // Resolver relações somente se vierem IDs
+        if (dto.getCategoryId() != null) entity.setCategory(resolver.requireCategory(dto.getCategoryId()));
+        if (dto.getLocationId() != null) entity.setLocation(resolver.optionalLocation(dto.getLocationId()));
 
-        return computerMapper.toResponseDTO(updatedComputer);
+        // Evite permitir status via update livre (ideal: endpoints de movimentação)
+        // Aqui você pode manter, mas eu recomendo remover de ComputerUpdateDTO no futuro.
+        // if (dto.getStatus() != null) entity.setStatus(dto.getStatus());
+
+        Computer updated = computerRepository.save(entity);
+        return computerMapper.toResponseDTO(updated);
     }
 
     @Transactional
     public boolean deleteComputer(Long id) {
-        if (computerRepository.existsById(id)) {
-            computerRepository.deleteById(id);
-            return true;
-        }
-        return false;
+        if (!computerRepository.existsById(id)) return false;
+        computerRepository.deleteById(id);
+        return true;
     }
 }

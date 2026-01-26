@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class UserCreateDTO {
+public class CollaboratorCreateDTO {
     @NotBlank(message = "O nome do colaborador é obrigatório.")
     private String name;
 

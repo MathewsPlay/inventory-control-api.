@@ -4,9 +4,9 @@ import com.matheuss.controle_estoque_api.domain.Location;
 import com.matheuss.controle_estoque_api.dto.LocationCreateDTO;
 import com.matheuss.controle_estoque_api.dto.LocationResponseDTO;
 import com.matheuss.controle_estoque_api.dto.LocationUpdateDTO;
-import com.matheuss.controle_estoque_api.mapper.LocationMapper; // IMPORT
+import com.matheuss.controle_estoque_api.mapper.LocationMapper;
 import com.matheuss.controle_estoque_api.repository.LocationRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,49 +15,43 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class LocationService {
 
-    @Autowired
-    private LocationRepository locationRepository;
-
-    @Autowired
-    private LocationMapper locationMapper; // INJEÇÃO
+    private final LocationRepository locationRepository;
+    private final LocationMapper locationMapper;
 
     @Transactional
     public LocationResponseDTO createLocation(LocationCreateDTO dto) {
-        Location newLocation = locationMapper.toEntity(dto);
-        Location savedLocation = locationRepository.save(newLocation);
-        return locationMapper.toResponseDTO(savedLocation);
+        Location entity = locationMapper.toEntity(dto);
+        Location saved = locationRepository.save(entity);
+        return locationMapper.toResponseDTO(saved);
     }
 
     @Transactional(readOnly = true)
     public List<LocationResponseDTO> findAllLocations() {
         return locationRepository.findAll().stream()
-                .map(locationMapper::toResponseDTO) // USO DO MAPPER
+                .map(locationMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
     @Transactional(readOnly = true)
     public Optional<LocationResponseDTO> findLocationById(Long id) {
-        return locationRepository.findById(id)
-                .map(locationMapper::toResponseDTO); // USO DO MAPPER
+        return locationRepository.findById(id).map(locationMapper::toResponseDTO);
     }
 
     @Transactional
     public Optional<LocationResponseDTO> updateLocation(Long id, LocationUpdateDTO dto) {
-        return locationRepository.findById(id).map(existingLocation -> {
-            locationMapper.updateEntityFromDto(dto, existingLocation); // USO DO MAPPER
-            Location updatedLocation = locationRepository.save(existingLocation);
-            return locationMapper.toResponseDTO(updatedLocation);
+        return locationRepository.findById(id).map(existing -> {
+            locationMapper.updateEntityFromDto(dto, existing);
+            return locationMapper.toResponseDTO(locationRepository.save(existing));
         });
     }
 
     @Transactional
     public boolean deleteLocation(Long id) {
-        if (locationRepository.existsById(id)) {
-            locationRepository.deleteById(id);
-            return true;
-        }
-        return false;
+        if (!locationRepository.existsById(id)) return false;
+        locationRepository.deleteById(id);
+        return true;
     }
 }

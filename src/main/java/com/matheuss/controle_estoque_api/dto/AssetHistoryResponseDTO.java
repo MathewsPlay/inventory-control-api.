@@ -9,5 +9,5 @@ public class AssetHistoryResponseDTO {
     private String eventType;
     private String details;
     private LocalDateTime eventDate;
-    private UserSimpleResponseDTO associatedUser;
+    private CollaboratorSimpleResponseDTO associatedUser;
 }

@@ -4,9 +4,9 @@ import com.matheuss.controle_estoque_api.domain.Category;
 import com.matheuss.controle_estoque_api.dto.CategoryCreateDTO;
 import com.matheuss.controle_estoque_api.dto.CategoryResponseDTO;
 import com.matheuss.controle_estoque_api.dto.CategoryUpdateDTO;
-import com.matheuss.controle_estoque_api.mapper.CategoryMapper; // <-- IMPORT NOVO
+import com.matheuss.controle_estoque_api.mapper.CategoryMapper;
 import com.matheuss.controle_estoque_api.repository.CategoryRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,57 +15,43 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class CategoryService {
 
-    @Autowired
-    private CategoryRepository categoryRepository;
+    private final CategoryRepository categoryRepository;
+    private final CategoryMapper categoryMapper;
 
-    @Autowired
-    private CategoryMapper categoryMapper; // <-- INJEÇÃO DO MAPPER
-
-    // CREATE
     @Transactional
     public CategoryResponseDTO createCategory(CategoryCreateDTO dto) {
-        Category newCategory = categoryMapper.toEntity(dto); // <-- USA O MAPPER
-        Category savedCategory = categoryRepository.save(newCategory);
-        return categoryMapper.toResponseDTO(savedCategory); // <-- USA O MAPPER
+        Category newCategory = categoryMapper.toEntity(dto);
+        Category saved = categoryRepository.save(newCategory);
+        return categoryMapper.toResponseDTO(saved);
     }
 
-    // READ (ALL)
     @Transactional(readOnly = true)
     public List<CategoryResponseDTO> findAllCategories() {
         return categoryRepository.findAll().stream()
-                .map(categoryMapper::toResponseDTO) // <-- USA O MAPPER
+                .map(categoryMapper::toResponseDTO)
                 .collect(Collectors.toList());
     }
 
-    // READ (BY ID)
     @Transactional(readOnly = true)
     public Optional<CategoryResponseDTO> findCategoryById(Long id) {
-        return categoryRepository.findById(id)
-                .map(categoryMapper::toResponseDTO); // <-- USA O MAPPER
+        return categoryRepository.findById(id).map(categoryMapper::toResponseDTO);
     }
 
-    // UPDATE
     @Transactional
     public Optional<CategoryResponseDTO> updateCategory(Long id, CategoryUpdateDTO dto) {
-        return categoryRepository.findById(id).map(existingCategory -> {
-            // Para o update, o mapeamento manual simples ainda é eficaz
-            existingCategory.setName(dto.getName());
-            Category updatedCategory = categoryRepository.save(existingCategory);
-            return categoryMapper.toResponseDTO(updatedCategory); // <-- USA O MAPPER
+        return categoryRepository.findById(id).map(existing -> {
+            existing.setName(dto.getName());
+            return categoryMapper.toResponseDTO(categoryRepository.save(existing));
         });
     }
 
-    // DELETE
     @Transactional
     public boolean deleteCategory(Long id) {
-        if (categoryRepository.existsById(id)) {
-            categoryRepository.deleteById(id);
-            return true;
-        }
-        return false;
+        if (!categoryRepository.existsById(id)) return false;
+        categoryRepository.deleteById(id);
+        return true;
     }
-
-    // O método de mapeamento manual foi removido!
 }

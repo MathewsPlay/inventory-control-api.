@@ -1,13 +1,14 @@
 package com.matheuss.controle_estoque_api.dto;
 
 import com.matheuss.controle_estoque_api.domain.enums.AssetStatus;
-import com.matheuss.controle_estoque_api.domain.enums.EquipmentState; // <<< IMPORT ADICIONADO
+import com.matheuss.controle_estoque_api.domain.enums.EquipmentState;
 import lombok.Data;
+
 import java.time.LocalDate;
 
 @Data
 public class ComponentUpdateDTO {
-    // Campos que podem ser atualizados
+
     private String assetTag;
     private AssetStatus status;
     private LocalDate purchaseDate;
@@ -20,7 +21,18 @@ public class ComponentUpdateDTO {
     private Long categoryId;
     private Long computerId;
 
-    // --- CAMPOS ADICIONADOS PARA CORRIGIR OS AVISOS ---
     private EquipmentState equipmentState;
     private String notes;
+
+    // CAMPOS ADMINISTRATIVOS (EXCEL)
+    private LocalDate dataRecebimento;
+    private String chamadoCompra;
+    private String sc;
+    private String pedido;
+    private String nf;
+    private String centroCusto;
+
+    // JIRA (CONTROLE)
+    private String ticketJira;
+    private String ticketDevolucaoJira;
 }

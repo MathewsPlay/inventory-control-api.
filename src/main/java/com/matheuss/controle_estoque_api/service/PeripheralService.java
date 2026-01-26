@@ -1,14 +1,16 @@
 package com.matheuss.controle_estoque_api.service;
 
 import com.matheuss.controle_estoque_api.domain.Peripheral;
-import com.matheuss.controle_estoque_api.domain.history.HistoryEventType; // <-- IMPORT ADICIONADO
+import com.matheuss.controle_estoque_api.domain.enums.AssetStatus;
+import com.matheuss.controle_estoque_api.domain.history.HistoryEventType;
 import com.matheuss.controle_estoque_api.dto.PeripheralCreateDTO;
 import com.matheuss.controle_estoque_api.dto.PeripheralResponseDTO;
 import com.matheuss.controle_estoque_api.dto.PeripheralUpdateDTO;
 import com.matheuss.controle_estoque_api.mapper.PeripheralMapper;
 import com.matheuss.controle_estoque_api.repository.PeripheralRepository;
+import com.matheuss.controle_estoque_api.service.support.EntityResolver;
 import jakarta.persistence.EntityNotFoundException;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,33 +18,28 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Service
+@RequiredArgsConstructor
 public class PeripheralService {
 
-    @Autowired
-    private PeripheralRepository peripheralRepository;
-
-    @Autowired
-    private PeripheralMapper peripheralMapper;
-
-    // ====================================================================
-    // == PASSO 1: INJETAR O SERVIÇO DE HISTÓRICO ==
-    // ====================================================================
-    @Autowired
-    private AssetHistoryService assetHistoryService;
+    private final PeripheralRepository peripheralRepository;
+    private final PeripheralMapper peripheralMapper;
+    private final AssetHistoryService assetHistoryService;
+    private final EntityResolver resolver;
 
     @Transactional
     public PeripheralResponseDTO createPeripheral(PeripheralCreateDTO dto) {
-        Peripheral newPeripheral = peripheralMapper.toEntity(dto);
-        
-        // Salva o novo periférico no banco para que ele tenha um ID
-        Peripheral savedPeripheral = peripheralRepository.save(newPeripheral);
+        Peripheral entity = peripheralMapper.toEntity(dto);
 
-        // ====================================================================
-        // == PASSO 2: REGISTRAR O EVENTO DE CRIAÇÃO NO HISTÓRICO ==
-        // ====================================================================
-        assetHistoryService.registerEvent(savedPeripheral, HistoryEventType.CRIACAO, "Ativo cadastrado no sistema.", null);
+        entity.setLocation(resolver.optionalLocation(dto.getLocationId()));
+        entity.setComputer(resolver.optionalComputer(dto.getComputerId()));
 
-        return peripheralMapper.toResponseDTO(savedPeripheral);
+        entity.setStatus(AssetStatus.EM_ESTOQUE);
+        entity.setUser(null);
+
+        Peripheral saved = peripheralRepository.save(entity);
+        assetHistoryService.registerEvent(saved, HistoryEventType.CRIACAO, "Ativo cadastrado no sistema.", null);
+
+        return peripheralMapper.toResponseDTO(saved);
     }
 
     @Transactional(readOnly = true)
@@ -61,12 +58,16 @@ public class PeripheralService {
 
     @Transactional
     public PeripheralResponseDTO updatePeripheral(Long id, PeripheralUpdateDTO dto) {
-        Peripheral existingPeripheral = peripheralRepository.findById(id)
+        Peripheral entity = peripheralRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Periférico não encontrado com o ID: " + id));
 
-        peripheralMapper.updateEntityFromDto(dto, existingPeripheral);
-        Peripheral updatedPeripheral = peripheralRepository.save(existingPeripheral);
-        return peripheralMapper.toResponseDTO(updatedPeripheral);
+        peripheralMapper.updateEntityFromDto(dto, entity);
+
+        if (dto.getLocationId() != null) entity.setLocation(resolver.optionalLocation(dto.getLocationId()));
+        if (dto.getComputerId() != null) entity.setComputer(resolver.optionalComputer(dto.getComputerId()));
+
+        Peripheral updated = peripheralRepository.save(entity);
+        return peripheralMapper.toResponseDTO(updated);
     }
 
     @Transactional

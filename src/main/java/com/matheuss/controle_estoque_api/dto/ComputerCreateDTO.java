@@ -1,11 +1,12 @@
 package com.matheuss.controle_estoque_api.dto;
 
 import com.matheuss.controle_estoque_api.domain.enums.AssetStatus;
-import com.matheuss.controle_estoque_api.domain.enums.EquipmentState; 
+import com.matheuss.controle_estoque_api.domain.enums.EquipmentState;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
+
 import java.time.LocalDate;
 
 @Data
@@ -14,10 +15,10 @@ public class ComputerCreateDTO {
     @NotBlank(message = "A etiqueta do ativo (assetTag) é obrigatória.")
     private String assetTag;
 
-    @NotNull(message = "O status do ativo é obrigatório.")
+    // Pode vir nulo (backend define EM_ESTOQUE)
     private AssetStatus status;
 
-    @NotNull(message = "O estado do equipamento é obrigatório.") // 2. Adicione o novo campo com validação
+    @NotNull(message = "O estado do equipamento é obrigatório.")
     private EquipmentState equipmentState;
 
     @NotNull(message = "A data de compra é obrigatória.")
@@ -27,7 +28,19 @@ public class ComputerCreateDTO {
 
     private String notes;
 
-    // Campos específicos de Computer
+    // CAMPOS ADMINISTRATIVOS (EXCEL)
+    private LocalDate dataRecebimento;
+    private String chamadoCompra;
+    private String sc;
+    private String pedido;
+    private String nf;
+    private String centroCusto;
+
+    // JIRA (CONTROLE)
+    private String ticketJira;
+    private String ticketDevolucaoJira;
+
+    // CAMPOS ESPECÍFICOS
     @NotBlank(message = "O nome do computador é obrigatório.")
     private String name;
 

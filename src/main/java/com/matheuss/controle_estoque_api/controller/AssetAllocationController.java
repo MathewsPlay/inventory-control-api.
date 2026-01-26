@@ -1,33 +1,44 @@
 package com.matheuss.controle_estoque_api.controller;
 
 import com.matheuss.controle_estoque_api.service.AssetAllocationService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PatchMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/assets" )
+@RequestMapping("/api/assets")
+@RequiredArgsConstructor
 public class AssetAllocationController {
 
-    @Autowired
-    private AssetAllocationService assetAllocationService;
+    private final AssetAllocationService assetAllocationService;
 
-    // Endpoint para ALOCAR um ativo a um usuário
-    // Ex: PATCH http://localhost:8080/api/assets/1/assign/1
-    @PatchMapping("/{assetId}/assign/{userId}" )
-    public ResponseEntity<Void> assignAsset(@PathVariable Long assetId, @PathVariable Long userId) {
-        assetAllocationService.assignAsset(assetId, userId);
-        return ResponseEntity.ok().build(); // Retorna 200 OK se a operação for bem-sucedida
+    // Alocar para colaborador (Home office / empréstimo)
+    // PATCH /api/assets/{assetId}/assign/{collaboratorId}
+    @PatchMapping("/{assetId}/assign/{collaboratorId}")
+    public ResponseEntity<Void> assignToCollaborator(
+            @PathVariable Long assetId,
+            @PathVariable Long collaboratorId
+    ) {
+        assetAllocationService.assignToCollaborator(assetId, collaboratorId);
+        return ResponseEntity.ok().build();
     }
 
-    // Endpoint para DESALOCAR um ativo (retornar ao estoque)
-    // Ex: PATCH http://localhost:8080/api/assets/1/unassign
-    @PatchMapping("/{assetId}/unassign" )
-    public ResponseEntity<Void> unassignAsset(@PathVariable Long assetId) {
-        assetAllocationService.unassignAsset(assetId);
-        return ResponseEntity.ok().build(); // Retorna 200 OK
+    // Alocar para localização (PA)
+    // PATCH /api/assets/{assetId}/assign-location/{locationId}
+    @PatchMapping("/{assetId}/assign-location/{locationId}")
+    public ResponseEntity<Void> assignToLocation(
+            @PathVariable Long assetId,
+            @PathVariable Long locationId
+    ) {
+        assetAllocationService.assignToLocation(assetId, locationId);
+        return ResponseEntity.ok().build();
+    }
+
+    // Devolver para estoque
+    // PATCH /api/assets/{assetId}/unassign
+    @PatchMapping("/{assetId}/unassign")
+    public ResponseEntity<Void> unassignToStock(@PathVariable Long assetId) {
+        assetAllocationService.unassignToStock(assetId);
+        return ResponseEntity.ok().build();
     }
 }

@@ -10,12 +10,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Entity
-@Table(name = "users") // Usamos 'users' porque 'user' é uma palavra reservada em muitos bancos de dados
+@Table(name = "collaborators") // Usamos 'users' porque 'user' é uma palavra reservada em muitos bancos de dados
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 @EqualsAndHashCode(of = "id")
-public class User {
+public class Collaborator {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -25,7 +25,7 @@ public class User {
     private String name; // Nome completo do colaborador
 
     @Column(nullable = false, unique = true)
-    private String username; // Pode ser a matrícula, login de rede, etc. Deve ser único.
+    private String matricula; // Pode ser a matrícula, login de rede, etc. Deve ser único.
 
     @Column(nullable = false)
     private String department; // Setor/Departamento do colaborador
@@ -37,6 +37,6 @@ public class User {
     // CascadeType.ALL e orphanRemoval = true não são recomendados aqui,
     // pois não queremos deletar um ativo se o usuário for deletado.
     // ====================================================================
-    @OneToMany(mappedBy = "user", fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "collaborator", fetch = FetchType.LAZY)
     private List<Asset> assets = new ArrayList<>();
 }
