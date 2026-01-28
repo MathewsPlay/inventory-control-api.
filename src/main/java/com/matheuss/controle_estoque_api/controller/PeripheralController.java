@@ -4,8 +4,8 @@ import com.matheuss.controle_estoque_api.dto.PeripheralCreateDTO;
 import com.matheuss.controle_estoque_api.dto.PeripheralResponseDTO;
 import com.matheuss.controle_estoque_api.dto.PeripheralUpdateDTO;
 import com.matheuss.controle_estoque_api.service.PeripheralService;
-import jakarta.validation.Valid; // <<< IMPORT NECESSÁRIO
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -15,12 +15,11 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/peripherals" )
+@RequiredArgsConstructor
 public class PeripheralController {
 
-    @Autowired
-    private PeripheralService peripheralService;
+    private final PeripheralService peripheralService;
 
-    // --- CREATE ---
     @PostMapping
     public ResponseEntity<PeripheralResponseDTO> createPeripheral(@RequestBody @Valid PeripheralCreateDTO dto) {
         PeripheralResponseDTO createdPeripheral = peripheralService.createPeripheral(dto);
@@ -32,31 +31,20 @@ public class PeripheralController {
         return ResponseEntity.created(location).body(createdPeripheral);
     }
 
-    // --- READ (ALL) ---
     @GetMapping
     public ResponseEntity<List<PeripheralResponseDTO>> getAllPeripherals() {
-        List<PeripheralResponseDTO> peripherals = peripheralService.getAllPeripherals();
-        return ResponseEntity.ok(peripherals);
+        return ResponseEntity.ok(peripheralService.getAllPeripherals());
     }
 
-    // --- READ (BY ID) (Simplificado) ---
     @GetMapping("/{id}")
     public ResponseEntity<PeripheralResponseDTO> getPeripheralById(@PathVariable Long id) {
-        PeripheralResponseDTO peripheral = peripheralService.getPeripheralById(id);
-        return ResponseEntity.ok(peripheral);
+        // Simplificado
+        return ResponseEntity.ok(peripheralService.getPeripheralById(id));
     }
 
-    // --- UPDATE (Simplificado) ---
     @PutMapping("/{id}")
     public ResponseEntity<PeripheralResponseDTO> updatePeripheral(@PathVariable Long id, @RequestBody @Valid PeripheralUpdateDTO dto) {
-        PeripheralResponseDTO updatedPeripheral = peripheralService.updatePeripheral(id, dto);
-        return ResponseEntity.ok(updatedPeripheral);
-    }
-
-    // --- DELETE (Simplificado) ---
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deletePeripheral(@PathVariable Long id) {
-        peripheralService.deletePeripheral(id);
-        return ResponseEntity.noContent().build();
+        // Simplificado
+        return ResponseEntity.ok(peripheralService.updatePeripheral(id, dto));
     }
 }

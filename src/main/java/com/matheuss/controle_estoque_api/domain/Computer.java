@@ -24,10 +24,7 @@ public class Computer extends Asset {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "category_id")
     private Category category;
+    @OneToMany(mappedBy = "computer", cascade = {CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REFRESH}, orphanRemoval = true)
+private List<Component> components = new ArrayList<>();
 
-    // --- NOVO RELACIONAMENTO BIDIRECIONAL (APENAS COMPONENTES) ---
-
-    @OneToMany(mappedBy = "computer", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore // Essencial para evitar loops
-    private List<Component> components = new ArrayList<>();
 }

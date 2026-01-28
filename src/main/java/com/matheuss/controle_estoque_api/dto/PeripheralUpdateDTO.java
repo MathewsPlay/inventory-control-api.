@@ -14,6 +14,11 @@ public class PeripheralUpdateDTO {
     private LocalDate purchaseDate;
     private Long locationId;
 
+    // ====================================================================
+    // == CAMPO ADICIONADO PARA PERMITIR ATUALIZAÇÃO DE COLABORADOR ==
+    // ====================================================================
+    private Long collaboratorId;
+
     private String type;
     private String name;
     private String model;

@@ -1,9 +1,8 @@
 package com.matheuss.controle_estoque_api.service;
 
-import com.matheuss.controle_estoque_api.domain.Asset;
-import com.matheuss.controle_estoque_api.domain.Location;
-import com.matheuss.controle_estoque_api.domain.Collaborator;
+import com.matheuss.controle_estoque_api.domain.*;
 import com.matheuss.controle_estoque_api.domain.enums.AssetStatus;
+import com.matheuss.controle_estoque_api.domain.enums.EquipmentState;
 import com.matheuss.controle_estoque_api.domain.history.HistoryEventType;
 import com.matheuss.controle_estoque_api.repository.AssetRepository;
 import com.matheuss.controle_estoque_api.repository.LocationRepository;
@@ -18,13 +17,9 @@ import org.springframework.transaction.annotation.Transactional;
 public class AssetAllocationService {
 
     private final AssetRepository assetRepository;
-    private final CollaboratorRepository userRepository;
+    private final CollaboratorRepository collaboratorRepository;
     private final LocationRepository locationRepository;
     private final AssetHistoryService assetHistoryService;
-
-    // =========================
-    // Commands
-    // =========================
 
     @Transactional
     public void assignToCollaborator(Long assetId, Long collaboratorId) {
@@ -33,11 +28,11 @@ public class AssetAllocationService {
 
         validateCanAssignFromStock(asset);
 
-        asset.setUser(collaborator);
+        asset.setCollaborator(collaborator);
         asset.setLocation(null);
         asset.setStatus(AssetStatus.EM_USO);
 
-        recordAllocation(asset,
+        assetHistoryService.registerEvent(asset, HistoryEventType.ALOCACAO,
                 "Ativo alocado para o colaborador: " + collaborator.getName() + " (ID: " + collaborator.getId() + ").",
                 collaborator
         );
@@ -50,11 +45,11 @@ public class AssetAllocationService {
 
         validateCanAssignFromStock(asset);
 
-        asset.setUser(null);
+        asset.setCollaborator(null);
         asset.setLocation(location);
         asset.setStatus(AssetStatus.EM_USO);
 
-        recordAllocation(asset,
+        assetHistoryService.registerEvent(asset, HistoryEventType.ALOCACAO,
                 "Ativo alocado para a localização: PA " + location.getPaNumber() + " (" + location.getSector() + ").",
                 null
         );
@@ -66,27 +61,63 @@ public class AssetAllocationService {
 
         validateCanUnassignToStock(asset);
 
-        Collaborator previousUser = asset.getUser();
+        Collaborator previousCollaborator = asset.getCollaborator();
         Location previousLocation = asset.getLocation();
 
-        asset.setUser(null);
+        asset.setCollaborator(null);
         asset.setLocation(null);
         asset.setStatus(AssetStatus.EM_ESTOQUE);
 
-        recordReturn(asset, previousUser, previousLocation);
+        recordReturn(asset, previousCollaborator, previousLocation);
     }
 
+    // ====================================================================
+    // == NOVO MÉTODO PARA DESCARTE (SOFT DELETE) ==
+    // ====================================================================
+    @Transactional
+    public void disposeAsset(Long assetId) {
+        Asset asset = requireAsset(assetId);
+
+        // REGRA DE NEGÓCIO: Não se pode descartar um ativo que já está descartado ou em uso.
+        if (asset.getStatus() == AssetStatus.DESCARTADO) {
+            throw new IllegalStateException("Operação não permitida: O ativo já foi descartado.");
+        }
+        if (asset.getStatus() == AssetStatus.EM_USO) {
+            throw new IllegalStateException("Operação não permitida: O ativo não pode ser descartado pois está em uso.");
+        }
+
+        // Se for um computador, processa seus componentes para retorná-los ao estoque.
+        if (asset instanceof Computer) {
+            Computer computer = (Computer) asset;
+            if (computer.getComponents() != null && !computer.getComponents().isEmpty()) {
+                for (Component component : computer.getComponents()) {
+                    component.setComputer(null);
+                    component.setStatus(AssetStatus.EM_ESTOQUE);
+                    assetHistoryService.registerEvent(component, HistoryEventType.DEVOLUCAO,
+                        "Componente retornado ao estoque após descarte do computador: " + computer.getName(), null);
+                }
+            }
+        }
+
+        // ATUALIZA O STATUS E REGISTRA O EVENTO
+        asset.setStatus(AssetStatus.DESCARTADO);
+        asset.setEquipmentState(EquipmentState.DESCARTADO); // Atualiza o estado de conservação também
+        asset.setCollaborator(null); // Garante que não está vinculado a ninguém
+        asset.setLocation(null);     // Garante que não está vinculado a nenhum lugar
+
+        assetHistoryService.registerEvent(asset, HistoryEventType.DESCARTE, "Ativo foi marcado como descartado.", null);
+    }
+
+
     // =========================
-    // Helpers (Business rules)
+    // Helpers (Business rules & Entity loading)
     // =========================
 
     private void validateCanAssignFromStock(Asset asset) {
         if (asset.getStatus() != AssetStatus.EM_ESTOQUE) {
-            throw new IllegalStateException(
-                    "Operação não permitida: o ativo '" + asset.getAssetTag() + "' não está em estoque."
-            );
+            throw new IllegalStateException("Operação não permitida: o ativo '" + asset.getAssetTag() + "' não está em estoque.");
         }
-        if (asset.getUser() != null || asset.getLocation() != null) {
+        if (asset.getCollaborator() != null || asset.getLocation() != null) {
             throw new IllegalStateException("Operação não permitida: o ativo já está alocado.");
         }
     }
@@ -95,33 +126,22 @@ public class AssetAllocationService {
         if (asset.getStatus() != AssetStatus.EM_USO) {
             throw new IllegalStateException("Operação não permitida: o ativo não está em uso para ser devolvido.");
         }
-        if (asset.getUser() == null && asset.getLocation() == null) {
+        if (asset.getCollaborator() == null && asset.getLocation() == null) {
             throw new IllegalStateException("Operação não permitida: o ativo não está alocado a ninguém/nenhuma PA.");
         }
     }
 
-    private void recordAllocation(Asset asset, String details, Collaborator associatedUser) {
-        assetHistoryService.registerEvent(asset, HistoryEventType.ALOCACAO, details, associatedUser);
-    }
-
-    private void recordReturn(Asset asset, Collaborator previousUser, Location previousLocation) {
+    private void recordReturn(Asset asset, Collaborator previousCollaborator, Location previousLocation) {
         String details;
-        if (previousUser != null) {
-            details = "Ativo devolvido ao estoque. Estava anteriormente com o colaborador: "
-                    + previousUser.getName() + " (ID: " + previousUser.getId() + ").";
+        if (previousCollaborator != null) {
+            details = "Ativo devolvido ao estoque. Estava anteriormente com o colaborador: " + previousCollaborator.getName();
         } else if (previousLocation != null) {
-            details = "Ativo devolvido ao estoque. Estava anteriormente na localização: PA "
-                    + previousLocation.getPaNumber() + " (" + previousLocation.getSector() + ").";
+            details = "Ativo devolvido ao estoque. Estava anteriormente na localização: PA " + previousLocation.getPaNumber();
         } else {
             details = "Ativo devolvido ao estoque.";
         }
-
-        assetHistoryService.registerEvent(asset, HistoryEventType.DEVOLUCAO, details, previousUser);
+        assetHistoryService.registerEvent(asset, HistoryEventType.DEVOLUCAO, details, previousCollaborator);
     }
-
-    // =========================
-    // Helpers (Entity loading)
-    // =========================
 
     private Asset requireAsset(Long id) {
         return assetRepository.findById(id)
@@ -129,7 +149,7 @@ public class AssetAllocationService {
     }
 
     private Collaborator requireCollaborator(Long id) {
-        return userRepository.findById(id)
+        return collaboratorRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Colaborador não encontrado com o ID: " + id));
     }
 

@@ -23,7 +23,7 @@ public interface ComputerMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "category", ignore = true)   // service resolve por categoryId
     @Mapping(target = "location", ignore = true)   // service resolve por locationId
-    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "collaborator", ignore = true)
     @Mapping(target = "history", ignore = true)
     @Mapping(target = "components", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -37,7 +37,7 @@ public interface ComputerMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "location", ignore = true)
-    @Mapping(target = "user", ignore = true)
+    @Mapping(target = "collaborator", ignore = true)
     @Mapping(target = "history", ignore = true)
     @Mapping(target = "components", ignore = true)
     @Mapping(target = "createdAt", ignore = true)

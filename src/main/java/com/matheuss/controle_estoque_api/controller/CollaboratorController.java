@@ -14,7 +14,7 @@ import java.net.URI;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/collaborators")
+@RequestMapping("/api/collaborators" )
 @RequiredArgsConstructor
 public class CollaboratorController {
 
@@ -23,13 +23,11 @@ public class CollaboratorController {
     @PostMapping
     public ResponseEntity<CollaboratorResponseDTO> create(@RequestBody @Valid CollaboratorCreateDTO dto) {
         CollaboratorResponseDTO created = collaboratorService.create(dto);
-
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/{id}")
                 .buildAndExpand(created.getId())
                 .toUri();
-
         return ResponseEntity.created(location).body(created);
     }
 

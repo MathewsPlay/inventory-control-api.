@@ -17,7 +17,7 @@ public class ComponentUpdateDTO {
     private String name;
     private String model;
     private String serialNumber;
-
+    private Long collaboratorId;
     private Long categoryId;
     private Long computerId;
 

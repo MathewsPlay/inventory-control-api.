@@ -6,7 +6,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/assets")
+@RequestMapping("/api/assets" )
 @RequiredArgsConstructor
 public class AssetAllocationController {
 
@@ -39,6 +39,22 @@ public class AssetAllocationController {
     @PatchMapping("/{assetId}/unassign")
     public ResponseEntity<Void> unassignToStock(@PathVariable Long assetId) {
         assetAllocationService.unassignToStock(assetId);
+        return ResponseEntity.ok().build();
+    }
+
+    // ====================================================================
+    // == NOVO ENDPOINT PARA DESCARTE (SOFT DELETE) ==
+    // ====================================================================
+    /**
+     * Marca um ativo como DESCARTADO (Soft Delete).
+     * Esta operação é irreversível do ponto de vista do negócio e
+     * só pode ser executada se o ativo não estiver em uso.
+     * @param assetId O ID do ativo a ser descartado.
+     * @return ResponseEntity com status 200 OK.
+     */
+    @PatchMapping("/{assetId}/dispose")
+    public ResponseEntity<Void> disposeAsset(@PathVariable Long assetId) {
+        assetAllocationService.disposeAsset(assetId);
         return ResponseEntity.ok().build();
     }
 }

@@ -9,7 +9,7 @@ import lombok.AllArgsConstructor;
 import java.util.List;
 
 @Entity
-@Table(name = "location") // Nome da tabela no banco
+@Table(name = "location")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,18 +20,19 @@ public class Location {
     private Long id;
 
     @Column(nullable = false)
-    private String paNumber; // O número da PA. Ex: "7", "8", "60"
+    private String paNumber;
 
     @Column(nullable = false)
-    private String floor; // O andar. Ex: "7º Andar", "Térreo"
+    private String floor;
 
     @Column(nullable = false)
-    private String sector; // O setor/cliente. Ex: "iFood", "Bancos"
+    private String sector;
 
     @Column(columnDefinition = "TEXT")
-    private String description; // Campo opcional para detalhes. Ex: "Mesa ao lado do pilar"
+    private String description;
 
-    @JsonIgnore // Essencial para evitar loops infinitos ao serializar
-    @OneToMany(mappedBy = "location", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Asset> assets; // Lista de todos os ativos (computadores, mouses, etc.) nesta PA
+    @JsonIgnore
+    // AQUI ESTÁ A ALTERAÇÃO
+    @OneToMany(mappedBy = "location") 
+    private List<Asset> assets;
 }

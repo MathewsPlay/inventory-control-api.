@@ -20,16 +20,12 @@ public class CollaboratorService {
     private final CollaboratorRepository collaboratorRepository;
     private final CollaboratorMapper collaboratorMapper;
 
-    // COMMANDS
-
     @Transactional
     public CollaboratorResponseDTO create(CollaboratorCreateDTO dto) {
         Collaborator entity = collaboratorMapper.toEntity(dto);
         Collaborator saved = collaboratorRepository.save(entity);
         return collaboratorMapper.toResponseDTO(saved);
     }
-
-    // QUERIES
 
     @Transactional(readOnly = true)
     public List<CollaboratorResponseDTO> getAll() {
@@ -45,12 +41,10 @@ public class CollaboratorService {
                 .orElseThrow(() -> new EntityNotFoundException("Colaborador não encontrado com o ID: " + id));
     }
 
-    // COMMANDS
-
     @Transactional
     public CollaboratorResponseDTO update(Long id, CollaboratorUpdateDTO dto) {
         Collaborator entity = collaboratorRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Colaborador não encontrado com o ID: " + id));
+                .orElseThrow(() -> new EntityNotFoundException("Colaborator não encontrado com o ID: " + id));
 
         collaboratorMapper.updateEntityFromDto(dto, entity);
 
@@ -60,9 +54,14 @@ public class CollaboratorService {
 
     @Transactional
     public void delete(Long id) {
-        if (!collaboratorRepository.existsById(id)) {
-            throw new EntityNotFoundException("Colaborador não encontrado com o ID: " + id);
+        Collaborator collaborator = collaboratorRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Colaborador não encontrado com o ID: " + id));
+
+        // VERIFICAÇÃO DE SEGURANÇA: O colaborador possui ativos?
+        if (collaborator.getAssets() != null && !collaborator.getAssets().isEmpty()) {
+            throw new IllegalStateException("Não é possível deletar o colaborador '" + collaborator.getName() + "' pois ele possui " + collaborator.getAssets().size() + " ativo(s) alocado(s).");
         }
+
         collaboratorRepository.deleteById(id);
     }
 }

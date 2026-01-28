@@ -51,13 +51,4 @@ public class ComputerController {
         ComputerResponseDTO updatedComputer = computerService.updateComputer(id, computerDTO);
         return ResponseEntity.ok(updatedComputer);
     }
-
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteComputer(@PathVariable Long id) {
-        if (computerService.deleteComputer(id)) {
-            return ResponseEntity.noContent().build();
-        } else {
-            return ResponseEntity.notFound().build();
-        }
-    }
 }

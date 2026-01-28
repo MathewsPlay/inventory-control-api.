@@ -5,13 +5,14 @@ import com.matheuss.controle_estoque_api.dto.CategoryCreateDTO;
 import com.matheuss.controle_estoque_api.dto.CategoryResponseDTO;
 import com.matheuss.controle_estoque_api.dto.CategoryUpdateDTO;
 import com.matheuss.controle_estoque_api.mapper.CategoryMapper;
+import com.matheuss.controle_estoque_api.repository.AssetRepository; // Importar
 import com.matheuss.controle_estoque_api.repository.CategoryRepository;
+import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,6 +20,7 @@ import java.util.stream.Collectors;
 public class CategoryService {
 
     private final CategoryRepository categoryRepository;
+    private final AssetRepository assetRepository; // Adicionado para verificação
     private final CategoryMapper categoryMapper;
 
     @Transactional
@@ -36,22 +38,33 @@ public class CategoryService {
     }
 
     @Transactional(readOnly = true)
-    public Optional<CategoryResponseDTO> findCategoryById(Long id) {
-        return categoryRepository.findById(id).map(categoryMapper::toResponseDTO);
+    public CategoryResponseDTO findCategoryById(Long id) {
+        return categoryRepository.findById(id)
+                .map(categoryMapper::toResponseDTO)
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o ID: " + id));
     }
 
     @Transactional
-    public Optional<CategoryResponseDTO> updateCategory(Long id, CategoryUpdateDTO dto) {
-        return categoryRepository.findById(id).map(existing -> {
-            existing.setName(dto.getName());
-            return categoryMapper.toResponseDTO(categoryRepository.save(existing));
-        });
+    public CategoryResponseDTO updateCategory(Long id, CategoryUpdateDTO dto) {
+        Category existing = categoryRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o ID: " + id));
+        
+        existing.setName(dto.getName());
+        Category saved = categoryRepository.save(existing);
+        return categoryMapper.toResponseDTO(saved);
     }
 
     @Transactional
-    public boolean deleteCategory(Long id) {
-        if (!categoryRepository.existsById(id)) return false;
+    public void deleteCategory(Long id) {
+        Category category = categoryRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Categoria não encontrada com o ID: " + id));
+
+        // VERIFICAÇÃO DE SEGURANÇA: A categoria está em uso?
+        // (Precisaremos adicionar um método no AssetRepository)
+        // if (assetRepository.existsByCategoryId(id)) {
+        //     throw new IllegalStateException("Não é possível deletar a categoria '" + category.getName() + "' pois ela está associada a um ou mais ativos.");
+        // }
+        
         categoryRepository.deleteById(id);
-        return true;
     }
 }
