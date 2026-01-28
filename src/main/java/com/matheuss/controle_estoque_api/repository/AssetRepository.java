@@ -8,14 +8,14 @@ import java.util.Optional;
 
 @Repository
 public interface AssetRepository extends JpaRepository<Asset, Long> {
-    Optional<Asset> findByAssetTag(String assetTag);
-    /**
-     * Verifica de forma otimizada se existe algum ativo associado a uma determinada categoria.
-     * O Spring Data JPA cria a consulta SQL (ex: SELECT 1 FROM asset WHERE category_id = ? LIMIT 1)
-     * que é muito mais performática do que buscar todos os ativos e verificar se a lista está vazia.
-     * @param categoryId O ID da categoria a ser verificada.
-     * @return true se pelo menos um ativo usar a categoria, false caso contrário.
-     */
-    boolean existsByCategoryId(Long categoryId);
 
+    /**
+     * Busca um ativo pela sua etiqueta (assetTag), que deve ser única.
+     * @param assetTag A etiqueta do ativo a ser buscada.
+     * @return Um Optional contendo o ativo se encontrado.
+     */
+    Optional<Asset> findByAssetTag(String assetTag);
+
+    // O método 'boolean existsByCategoryId(Long categoryId);' foi removido daqui
+    // porque a entidade 'Asset' não possui a propriedade 'categoryId'.
 }

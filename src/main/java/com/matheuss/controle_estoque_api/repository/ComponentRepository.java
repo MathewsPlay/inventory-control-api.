@@ -2,16 +2,16 @@ package com.matheuss.controle_estoque_api.repository;
 
 import com.matheuss.controle_estoque_api.domain.Component;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query; // Importar
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
-import java.util.List; // Importar
+import java.util.List;
 
 @Repository
 public interface ComponentRepository extends JpaRepository<Component, Long> {
 
     // ====================================================================
-    // == NOVO MÉTODO OTIMIZADO PARA EVITAR N+1 QUERIES ==
+    // == MÉTODO OTIMIZADO PARA EVITAR N+1 QUERIES ==
     // ====================================================================
     /**
      * Busca todos os componentes, trazendo em uma única consulta as entidades
@@ -25,4 +25,14 @@ public interface ComponentRepository extends JpaRepository<Component, Long> {
            "LEFT JOIN FETCH c.collaborator " +
            "LEFT JOIN FETCH c.computer")
     List<Component> findAllWithDetails();
+
+    // ====================================================================
+    // == MÉTODO ADICIONADO PARA A VERIFICAÇÃO DE SEGURANÇA ==
+    // ====================================================================
+    /**
+     * Verifica se existe algum componente associado a uma determinada categoria.
+     * @param categoryId O ID da categoria a ser verificada.
+     * @return true se pelo menos um componente usar a categoria, false caso contrário.
+     */
+    boolean existsByCategoryId(Long categoryId);
 }

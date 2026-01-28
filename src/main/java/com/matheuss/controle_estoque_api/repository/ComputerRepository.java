@@ -14,9 +14,19 @@ import java.util.Optional;
 public interface ComputerRepository extends JpaRepository<Computer, Long> {
 
     @NonNull
-    @Query("SELECT c FROM Computer c JOIN FETCH c.category")
+    @Query("SELECT c FROM Computer c LEFT JOIN FETCH c.category") // Pequena correção: LEFT JOIN é mais seguro
     List<Computer> findAllWithDetails();
 
-    @Query("SELECT c FROM Computer c JOIN FETCH c.category WHERE c.id = :id")
+    @Query("SELECT c FROM Computer c LEFT JOIN FETCH c.category WHERE c.id = :id") // Pequena correção: LEFT JOIN é mais seguro
     Optional<Computer> findByIdWithDetails(@Param("id") Long id);
+
+    // ====================================================================
+    // == MÉTODO ADICIONADO PARA A VERIFICAÇÃO DE SEGURANÇA ==
+    // ====================================================================
+    /**
+     * Verifica se existe algum computador associado a uma determinada categoria.
+     * @param categoryId O ID da categoria a ser verificada.
+     * @return true se pelo menos um computador usar a categoria, false caso contrário.
+     */
+    boolean existsByCategoryId(Long categoryId);
 }
