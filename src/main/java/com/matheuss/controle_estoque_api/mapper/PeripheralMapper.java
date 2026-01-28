@@ -17,7 +17,7 @@ public interface PeripheralMapper {
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "location", ignore = true)  // service resolve por locationId
     @Mapping(target = "computer", ignore = true)  // service resolve por computerId
-    @Mapping(target = "user", ignore = true)
+      @Mapping(target = "collaborator", ignore = true)
     @Mapping(target = "history", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)
@@ -30,7 +30,7 @@ public interface PeripheralMapper {
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "computer", ignore = true)
-    @Mapping(target = "user", ignore = true)
+       @Mapping(target = "collaborator", ignore = true)
     @Mapping(target = "history", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)

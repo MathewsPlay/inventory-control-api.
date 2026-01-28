@@ -36,7 +36,6 @@ public class ComputerService {
         entity.setLocation(resolver.optionalLocation(dto.getLocationId()));
 
         entity.setStatus(AssetStatus.EM_ESTOQUE);
-        // CORREÇÃO APLICADA: Garante que o colaborador é nulo na criação.
         entity.setCollaborator(null);
 
         Computer saved = computerRepository.save(entity);
@@ -63,7 +62,6 @@ public class ComputerService {
                 .orElseThrow(() -> new EntityNotFoundException("Computador não encontrado com o ID: " + id));
 
         // Guarda os valores antigos para comparação
-        // CORREÇÃO APLICADA: Usa getCollaborator()
         Collaborator oldCollaborator = entity.getCollaborator();
         Location oldLocation = entity.getLocation();
         AssetStatus oldStatus = entity.getStatus();
@@ -74,16 +72,13 @@ public class ComputerService {
         // Lógica de auditoria para mudanças de relacionamento e status
         
         // Verifica mudança de Colaborador
-        // CORREÇÃO APLICADA: Usa getCollaboratorId() do DTO
         Long newCollaboratorId = dto.getCollaboratorId();
         Long oldCollaboratorId = (oldCollaborator != null) ? oldCollaborator.getId() : null;
         if (!Objects.equals(oldCollaboratorId, newCollaboratorId)) {
             if (newCollaboratorId == null) {
-                // CORREÇÃO APLICADA: Usa setCollaborator(null)
                 entity.setCollaborator(null);
                 assetHistoryService.registerEvent(entity, HistoryEventType.DEVOLUCAO, "Ativo desvinculado do colaborador via atualização.", oldCollaborator);
             } else {
-                // CORREÇÃO APLICADA: Usa requireCollaborator e setCollaborator
                 Collaborator newCollaborator = resolver.requireCollaborator(newCollaboratorId);
                 entity.setCollaborator(newCollaborator);
                 assetHistoryService.registerEvent(entity, HistoryEventType.ALOCACAO, "Ativo alocado para o colaborador " + newCollaborator.getName() + " via atualização.", newCollaborator);
@@ -96,7 +91,14 @@ public class ComputerService {
         if (!Objects.equals(oldLocationId, newLocationId)) {
             if (newLocationId == null) {
                 entity.setLocation(null);
-                assetHistoryService.registerEvent(entity, HistoryEventType.DEVOLUCAO, "Ativo removido da localização PA " + oldLocation.getPaNumber() + " via atualização.", null);
+                // ====================================================================
+                // == CORREÇÃO DE SEGURANÇA APLICADA SEM ALTERAR A LÓGICA ==
+                // ====================================================================
+                String details = "Computador desvinculado de sua localização anterior via atualização.";
+                if (oldLocation != null) {
+                    details = "Computador removido da localização PA " + oldLocation.getPaNumber() + " via atualização.";
+                }
+                assetHistoryService.registerEvent(entity, HistoryEventType.DEVOLUCAO, details, null);
             } else {
                 Location newLocation = resolver.requireLocation(newLocationId);
                 entity.setLocation(newLocation);
@@ -118,5 +120,4 @@ public class ComputerService {
         Computer updated = computerRepository.save(entity);
         return computerMapper.toResponseDTO(updated);
     }
-
 }

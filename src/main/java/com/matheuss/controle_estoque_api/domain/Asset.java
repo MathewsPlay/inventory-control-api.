@@ -4,9 +4,9 @@ import com.matheuss.controle_estoque_api.domain.enums.AssetStatus;
 import com.matheuss.controle_estoque_api.domain.enums.EquipmentState;
 import com.matheuss.controle_estoque_api.domain.history.AssetHistory;
 import jakarta.persistence.*;
-import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
+import org.hibernate.envers.Audited; // 1. IMPORTAR A ANOTAÇÃO
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -23,6 +23,10 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(of = "id")
 @EntityListeners(AuditingEntityListener.class)
+// ====================================================================
+// == NOVA ANOTAÇÃO PARA ATIVAR A AUDITORIA DO HIBERNATE ENVERS ==
+// ====================================================================
+@Audited // 2. ADICIONAR A ANOTAÇÃO
 public abstract class Asset {
 
     @Id
@@ -47,26 +51,19 @@ public abstract class Asset {
     private String notes;
 
     // =======================
-    // CAMPOS ADMINISTRATIVOS 
+    // CAMPOS ADMINISTRATIVOS
     // =======================
     private LocalDate dataRecebimento;
-
     private String chamadoCompra;
-
     private String sc;
-
     private String pedido;
-
     private String nf;
-
     private String centroCusto;
 
     // ===========================
     // CAMPOS DO CONTROLE (JIRA)
     // ===========================
     private String ticketJira;
-
-    // Usado apenas quando o ativo foi emprestado para colaborador (home office) e devolvido
     private String ticketDevolucaoJira;
 
     // ===========================
@@ -81,7 +78,7 @@ public abstract class Asset {
     private Collaborator collaborator;
 
     // ===========================
-    // AUDITORIA
+    // AUDITORIA (JPA)
     // ===========================
     @CreatedDate
     @Column(nullable = false, updatable = false)
@@ -92,7 +89,7 @@ public abstract class Asset {
     private LocalDateTime updatedAt;
 
     // ===========================
-    // HISTÓRICO
+    // HISTÓRICO (DE EVENTOS DE NEGÓCIO)
     // ===========================
     @OneToMany(mappedBy = "asset", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<AssetHistory> history = new ArrayList<>();

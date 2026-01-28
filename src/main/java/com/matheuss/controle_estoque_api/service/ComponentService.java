@@ -48,7 +48,6 @@ public class ComponentService {
 
     @Transactional(readOnly = true)
     public List<ComponentResponseDTO> getAllComponents() {
-        // ATUALIZAÇÃO: Usando o método otimizado para evitar N+1 queries
         List<Component> components = componentRepository.findAllWithDetails();
         return components.stream()
                 .map(componentMapper::toResponseDTO)
@@ -57,7 +56,6 @@ public class ComponentService {
 
     @Transactional(readOnly = true)
     public ComponentResponseDTO getComponentById(Long id) {
-        // PADRONIZAÇÃO: Lança exceção se não encontrar
         return componentRepository.findById(id)
                 .map(componentMapper::toResponseDTO)
                 .orElseThrow(() -> new EntityNotFoundException("Componente não encontrado com o ID: " + id));
@@ -77,7 +75,7 @@ public class ComponentService {
         componentMapper.updateEntityFromDto(dto, entity);
 
         // Lógica de auditoria para relacionamentos e status
-        Long newCollaboratorId = dto.getCollaboratorId(); // Assumindo que foi adicionado ao DTO
+        Long newCollaboratorId = dto.getCollaboratorId();
         Long oldCollaboratorId = (oldCollaborator != null) ? oldCollaborator.getId() : null;
         if (!Objects.equals(oldCollaboratorId, newCollaboratorId)) {
             if (newCollaboratorId == null) {
@@ -95,7 +93,14 @@ public class ComponentService {
         if (!Objects.equals(oldLocationId, newLocationId)) {
              if (newLocationId == null) {
                 entity.setLocation(null);
-                assetHistoryService.registerEvent(entity, HistoryEventType.DEVOLUCAO, "Componente removido da localização PA " + oldLocation.getPaNumber() + " via atualização.", null);
+                // ====================================================================
+                // == CORREÇÃO DE SEGURANÇA CONTRA NULLPOINTEREXCEPTION ==
+                // ====================================================================
+                String details = "Componente desvinculado de sua localização anterior via atualização.";
+                if (oldLocation != null) {
+                    details = "Componente removido da localização PA " + oldLocation.getPaNumber() + " via atualização.";
+                }
+                assetHistoryService.registerEvent(entity, HistoryEventType.DEVOLUCAO, details, null);
             } else {
                 Location newLocation = resolver.requireLocation(newLocationId);
                 entity.setLocation(newLocation);
@@ -114,5 +119,4 @@ public class ComponentService {
         Component updated = componentRepository.save(entity);
         return componentMapper.toResponseDTO(updated);
     }
-
 }

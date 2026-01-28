@@ -14,6 +14,7 @@ public class ComputerUpdateDTO {
     private LocalDate purchaseDate;
     private Long categoryId;
     private Long locationId;
+    private Long collaboratorId;
 
     private String name;
     private String serialNumber;

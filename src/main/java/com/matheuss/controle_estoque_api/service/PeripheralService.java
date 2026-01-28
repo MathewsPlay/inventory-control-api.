@@ -46,7 +46,6 @@ public class PeripheralService {
 
     @Transactional(readOnly = true)
     public List<PeripheralResponseDTO> getAllPeripherals() {
-        // ATUALIZAÇÃO: Usando o método otimizado para evitar N+1 queries
         List<Peripheral> peripherals = peripheralRepository.findAllWithDetails();
         return peripherals.stream()
                 .map(peripheralMapper::toResponseDTO)
@@ -95,7 +94,14 @@ public class PeripheralService {
         if (!Objects.equals(oldLocationId, newLocationId)) {
              if (newLocationId == null) {
                 entity.setLocation(null);
-                assetHistoryService.registerEvent(entity, HistoryEventType.DEVOLUCAO, "Periférico removido da localização PA " + oldLocation.getPaNumber() + " via atualização.", null);
+                // ====================================================================
+                // == CORREÇÃO DE SEGURANÇA CONTRA NULLPOINTEREXCEPTION ==
+                // ====================================================================
+                String details = "Periférico desvinculado de sua localização anterior via atualização.";
+                if (oldLocation != null) {
+                    details = "Periférico removido da localização PA " + oldLocation.getPaNumber() + " via atualização.";
+                }
+                assetHistoryService.registerEvent(entity, HistoryEventType.DEVOLUCAO, details, null);
             } else {
                 Location newLocation = resolver.requireLocation(newLocationId);
                 entity.setLocation(newLocation);
@@ -116,6 +122,4 @@ public class PeripheralService {
         Peripheral updated = peripheralRepository.save(entity);
         return peripheralMapper.toResponseDTO(updated);
     }
-
-    // O método deletePeripheral() foi removido em favor da estratégia de "Soft Delete".
 }
