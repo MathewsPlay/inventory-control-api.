@@ -6,7 +6,9 @@ import com.matheuss.controle_estoque_api.domain.history.AssetHistory;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.envers.Audited; // 1. IMPORTAR A ANOTAÇÃO
+import org.hibernate.envers.Audited;
+import org.hibernate.envers.NotAudited;
+import org.hibernate.envers.RelationTargetAuditMode;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -23,10 +25,7 @@ import java.util.List;
 @Data
 @EqualsAndHashCode(of = "id")
 @EntityListeners(AuditingEntityListener.class)
-// ====================================================================
-// == NOVA ANOTAÇÃO PARA ATIVAR A AUDITORIA DO HIBERNATE ENVERS ==
-// ====================================================================
-@Audited // 2. ADICIONAR A ANOTAÇÃO
+@Audited
 public abstract class Asset {
 
     @Id
@@ -71,10 +70,15 @@ public abstract class Asset {
     // ===========================
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id")
+    // ====================================================================
+    // == CORREÇÃO FINAL APLICADA SEM ALTERAR A LÓGICA ==
+    // ====================================================================
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     private Location location;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "collaborator_id")
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     private Collaborator collaborator;
 
     // ===========================
@@ -92,5 +96,6 @@ public abstract class Asset {
     // HISTÓRICO (DE EVENTOS DE NEGÓCIO)
     // ===========================
     @OneToMany(mappedBy = "asset", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
+    @NotAudited
     private List<AssetHistory> history = new ArrayList<>();
 }
