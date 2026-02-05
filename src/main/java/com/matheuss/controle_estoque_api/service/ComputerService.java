@@ -1,6 +1,7 @@
 package com.matheuss.controle_estoque_api.service;
 
 import com.matheuss.controle_estoque_api.domain.Collaborator;
+import com.matheuss.controle_estoque_api.domain.Component; 
 import com.matheuss.controle_estoque_api.domain.Computer;
 import com.matheuss.controle_estoque_api.domain.Location;
 import com.matheuss.controle_estoque_api.domain.enums.AssetStatus;
@@ -9,6 +10,8 @@ import com.matheuss.controle_estoque_api.dto.ComputerCreateDTO;
 import com.matheuss.controle_estoque_api.dto.ComputerResponseDTO;
 import com.matheuss.controle_estoque_api.dto.ComputerUpdateDTO;
 import com.matheuss.controle_estoque_api.mapper.ComputerMapper;
+import com.matheuss.controle_estoque_api.repository.AssetRepository;
+import com.matheuss.controle_estoque_api.repository.ComponentRepository;
 import com.matheuss.controle_estoque_api.repository.ComputerRepository;
 import com.matheuss.controle_estoque_api.service.support.EntityResolver;
 import jakarta.persistence.EntityNotFoundException;
@@ -24,33 +27,41 @@ import java.util.Objects;
 public class ComputerService {
 
     private final ComputerRepository computerRepository;
+    private final AssetRepository assetRepository;
+    private final ComponentRepository componentRepository; 
     private final ComputerMapper computerMapper;
     private final AssetHistoryService assetHistoryService;
     private final EntityResolver resolver;
 
     @Transactional
     public ComputerResponseDTO createComputer(ComputerCreateDTO dto) {
+       
+        if (assetRepository.existsByPatrimonio(dto.getPatrimonio())) {
+            throw new IllegalStateException("Já existe um ativo com o número de patrimônio: " + dto.getPatrimonio());
+        }
+        if (dto.getAssetTag() != null && !dto.getAssetTag().isBlank() && assetRepository.existsByAssetTag(dto.getAssetTag())) {
+            throw new IllegalStateException("Já existe um ativo com o Asset Tag: " + dto.getAssetTag());
+        }
+        
         Computer entity = computerMapper.toEntity(dto);
-
         entity.setCategory(resolver.requireCategory(dto.getCategoryId()));
         entity.setLocation(resolver.optionalLocation(dto.getLocationId()));
-
         entity.setStatus(AssetStatus.EM_ESTOQUE);
         entity.setCollaborator(null);
-
         Computer saved = computerRepository.save(entity);
-
         assetHistoryService.registerEvent(saved, HistoryEventType.CRIACAO, "Ativo cadastrado no sistema.", null);
         return computerMapper.toResponseDTO(saved);
     }
 
     @Transactional(readOnly = true)
     public List<ComputerResponseDTO> getAllComputers() {
+        
         return computerMapper.toResponseDTOList(computerRepository.findAllWithDetails());
     }
 
     @Transactional(readOnly = true)
     public ComputerResponseDTO getComputerById(Long id) {
+       
         Computer entity = computerRepository.findByIdWithDetails(id)
                 .orElseThrow(() -> new EntityNotFoundException("Computador não encontrado com o ID: " + id));
         return computerMapper.toResponseDTO(entity);
@@ -58,66 +69,110 @@ public class ComputerService {
 
     @Transactional
     public ComputerResponseDTO updateComputer(Long id, ComputerUpdateDTO dto) {
-        Computer entity = computerRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Computador não encontrado com o ID: " + id));
-
-        // Guarda os valores antigos para comparação
-        Collaborator oldCollaborator = entity.getCollaborator();
-        Location oldLocation = entity.getLocation();
-        AssetStatus oldStatus = entity.getStatus();
         
-        // Aplica as atualizações de campos simples do DTO na entidade
-        computerMapper.updateEntityFromDto(dto, entity);
+        Computer computer = resolver.requireComputer(id);
+        Location newLocation = resolver.optionalLocation(dto.getLocationId());
+        Collaborator newCollaborator = resolver.optionalCollaborator(dto.getCollaboratorId());
 
-        // Lógica de auditoria para mudanças de relacionamento e status
-        
-        // Verifica mudança de Colaborador
-        Long newCollaboratorId = dto.getCollaboratorId();
-        Long oldCollaboratorId = (oldCollaborator != null) ? oldCollaborator.getId() : null;
-        if (!Objects.equals(oldCollaboratorId, newCollaboratorId)) {
-            if (newCollaboratorId == null) {
-                entity.setCollaborator(null);
-                assetHistoryService.registerEvent(entity, HistoryEventType.DEVOLUCAO, "Ativo desvinculado do colaborador via atualização.", oldCollaborator);
-            } else {
-                Collaborator newCollaborator = resolver.requireCollaborator(newCollaboratorId);
-                entity.setCollaborator(newCollaborator);
-                assetHistoryService.registerEvent(entity, HistoryEventType.ALOCACAO, "Ativo alocado para o colaborador " + newCollaborator.getName() + " via atualização.", newCollaborator);
+        if (dto.getPatrimonio() != null && !dto.getPatrimonio().isBlank() && !Objects.equals(computer.getPatrimonio(), dto.getPatrimonio())) {
+            if (assetRepository.existsByPatrimonio(dto.getPatrimonio())) {
+                throw new IllegalStateException("Operação não permitida: Já existe outro ativo com o patrimônio: " + dto.getPatrimonio());
+            }
+        }
+        if (dto.getAssetTag() != null && !dto.getAssetTag().isBlank() && !Objects.equals(computer.getAssetTag(), dto.getAssetTag())) {
+            if (assetRepository.existsByAssetTag(dto.getAssetTag())) {
+                throw new IllegalStateException("Operação não permitida: Já existe outro ativo com o Asset Tag: " + dto.getAssetTag());
             }
         }
 
-        // Verifica mudança de Localização
-        Long newLocationId = dto.getLocationId();
-        Long oldLocationId = (oldLocation != null) ? oldLocation.getId() : null;
-        if (!Objects.equals(oldLocationId, newLocationId)) {
-            if (newLocationId == null) {
-                entity.setLocation(null);
-                // ====================================================================
-                // == CORREÇÃO DE SEGURANÇA APLICADA SEM ALTERAR A LÓGICA ==
-                // ====================================================================
-                String details = "Computador desvinculado de sua localização anterior via atualização.";
-                if (oldLocation != null) {
-                    details = "Computador removido da localização PA " + oldLocation.getPaNumber() + " via atualização.";
-                }
-                assetHistoryService.registerEvent(entity, HistoryEventType.DEVOLUCAO, details, null);
-            } else {
-                Location newLocation = resolver.requireLocation(newLocationId);
-                entity.setLocation(newLocation);
-                assetHistoryService.registerEvent(entity, HistoryEventType.ALOCACAO, "Ativo alocado para a localização PA " + newLocation.getPaNumber() + " via atualização.", null);
-            }
-        }
-
-        // Verifica mudança de Status
-        if (dto.getStatus() != null && !Objects.equals(oldStatus, dto.getStatus())) {
-            assetHistoryService.registerEvent(entity, HistoryEventType.ATUALIZACAO, "Status alterado de '" + oldStatus.name() + "' para '" + dto.getStatus().name() + "' via atualização.", null);
-        }
-        
-        // Resolve outras relações (ex: Categoria)
+        computerMapper.updateEntityFromDto(dto, computer);
         if (dto.getCategoryId() != null) {
-            entity.setCategory(resolver.requireCategory(dto.getCategoryId()));
+            computer.setCategory(resolver.requireCategory(dto.getCategoryId()));
         }
 
-        // Salva a entidade com todas as alterações aplicadas
-        Computer updated = computerRepository.save(entity);
-        return computerMapper.toResponseDTO(updated);
+        Location oldLocation = computer.getLocation();
+        Collaborator oldCollaborator = computer.getCollaborator();
+
+        if (newLocation != null && newCollaborator != null) {
+            throw new IllegalStateException("Operação não permitida: Um ativo não pode ser alocado para um colaborador e uma localização ao mesmo tempo.");
+        }
+
+        computer.setLocation(newLocation);
+        computer.setCollaborator(newCollaborator);
+
+        if (newLocation != null || newCollaborator != null) {
+            computer.setStatus(AssetStatus.EM_USO);
+        } else {
+            computer.setStatus(AssetStatus.EM_ESTOQUE);
+        }
+
+        assetHistoryService.registerEvent(computer, HistoryEventType.ATUALIZACAO, "Dados do ativo foram atualizados.", null);
+
+        if (!Objects.equals(oldLocation, newLocation)) {
+            if (newLocation != null) {
+               assetHistoryService.registerEvent(computer, HistoryEventType.ALOCACAO, "Ativo alocado para a localização PA: " + newLocation.getPaNumber(), null);
+            }
+            if (oldLocation != null) {
+                assetHistoryService.registerEvent(computer, HistoryEventType.DEVOLUCAO, "Ativo devolvido da localização PA: " + oldLocation.getPaNumber(), null);
+            }
+        }
+        if (!Objects.equals(oldCollaborator, newCollaborator)) {
+            if (newCollaborator != null) {
+                assetHistoryService.registerEvent(computer, HistoryEventType.ALOCACAO, "Ativo alocado para o colaborador: " + newCollaborator.getName(), null);
+            }
+            if (oldCollaborator != null) {
+                assetHistoryService.registerEvent(computer, HistoryEventType.DEVOLUCAO, "Ativo devolvido pelo colaborador: " + oldCollaborator.getName(), null);
+            }
+        }
+
+        Computer updatedComputer = computerRepository.save(computer);
+        return computerMapper.toResponseDTO(updatedComputer);
+    }
+
+    //  NOVO MÉTODO ADICIONADO PARA A OPERAÇÃO DE TROCA ==
+
+    @Transactional
+    public ComputerResponseDTO swapComponent(Long computerId, Long componentToUninstallId, Long componentToInstallId) {
+        // 1. BUSCA DAS ENTIDADES
+        Computer computer = resolver.requireComputer(computerId);
+        Component componentToUninstall = resolver.requireComponent(componentToUninstallId);
+        Component componentToInstall = resolver.requireComponent(componentToInstallId);
+
+        // 2. VALIDAÇÕES DE NEGÓCIO CRÍTICAS
+        if (!computer.getComponents().contains(componentToUninstall)) {
+            throw new IllegalStateException(String.format("Operação não permitida: O componente '%s' (ID: %d) não está instalado no computador '%s'.",
+                    componentToUninstall.getName(), componentToUninstallId, computer.getName()));
+        }
+
+        if (componentToInstall.getStatus() != AssetStatus.EM_ESTOQUE) {
+            throw new IllegalStateException(String.format("Operação não permitida: O componente '%s' (ID: %d) não está em estoque e não pode ser instalado.",
+                    componentToInstall.getName(), componentToInstallId));
+        }
+
+        if (!Objects.equals(componentToUninstall.getType(), componentToInstall.getType())) {
+            throw new IllegalStateException(String.format("Operação não permitida: A troca só pode ser feita entre componentes do mesmo tipo. Tipo do componente atual: '%s', Tipo do novo componente: '%s'.",
+                    componentToUninstall.getType(), componentToInstall.getType()));
+        }
+
+        // 3. EXECUÇÃO DA TROCA
+        componentToUninstall.setComputer(null);
+        componentToUninstall.setStatus(AssetStatus.EM_ESTOQUE);
+
+        componentToInstall.setComputer(computer);
+        componentToInstall.setStatus(AssetStatus.EM_USO);
+
+        // 4. REGISTRO DE HISTÓRICO
+        String uninstallDetails = String.format("Componente '%s' (Tipo: %s) trocado e devolvido ao estoque.", componentToUninstall.getName(), componentToUninstall.getType());
+        assetHistoryService.registerEvent(componentToUninstall, HistoryEventType.DEVOLUCAO, uninstallDetails, null);
+
+        String installDetails = String.format("Componente '%s' (Tipo: %s) instalado via operação de troca no computador '%s'.", componentToInstall.getName(), componentToInstall.getType(), computer.getName());
+        assetHistoryService.registerEvent(componentToInstall, HistoryEventType.INSTALACAO, installDetails, null);
+
+        // 5. SALVAR E RETORNAR
+        computerRepository.save(computer);
+        componentRepository.save(componentToUninstall);
+        componentRepository.save(componentToInstall);
+
+        return getComputerById(computerId);
     }
 }

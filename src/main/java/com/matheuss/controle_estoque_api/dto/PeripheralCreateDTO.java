@@ -11,7 +11,7 @@ import java.time.LocalDate;
 @Data
 public class PeripheralCreateDTO {
 
-    @NotBlank(message = "A etiqueta do ativo (assetTag) é obrigatória.")
+    private String patrimonio;
     private String assetTag;
 
     // Pode vir nulo (backend define EM_ESTOQUE)

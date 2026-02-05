@@ -9,6 +9,7 @@ import com.matheuss.controle_estoque_api.dto.PeripheralCreateDTO;
 import com.matheuss.controle_estoque_api.dto.PeripheralResponseDTO;
 import com.matheuss.controle_estoque_api.dto.PeripheralUpdateDTO;
 import com.matheuss.controle_estoque_api.mapper.PeripheralMapper;
+import com.matheuss.controle_estoque_api.repository.AssetRepository; // 1. IMPORTAR
 import com.matheuss.controle_estoque_api.repository.PeripheralRepository;
 import com.matheuss.controle_estoque_api.service.support.EntityResolver;
 import jakarta.persistence.EntityNotFoundException;
@@ -25,12 +26,25 @@ import java.util.stream.Collectors;
 public class PeripheralService {
 
     private final PeripheralRepository peripheralRepository;
+    private final AssetRepository assetRepository; // 2. ADICIONAR INJEÇÃO
     private final PeripheralMapper peripheralMapper;
     private final AssetHistoryService assetHistoryService;
     private final EntityResolver resolver;
 
     @Transactional
     public PeripheralResponseDTO createPeripheral(PeripheralCreateDTO dto) {
+        // ====================================================================
+        // == LÓGICA DE VALIDAÇÃO DE UNICIDADE DOS IDENTIFICADORES ==
+        // ====================================================================
+        if (dto.getPatrimonio() != null && !dto.getPatrimonio().isBlank() && assetRepository.existsByPatrimonio(dto.getPatrimonio())) {
+            throw new IllegalStateException("Já existe um ativo com o número de patrimônio: " + dto.getPatrimonio());
+        }
+        if (dto.getAssetTag() != null && !dto.getAssetTag().isBlank() && assetRepository.existsByAssetTag(dto.getAssetTag())) {
+            throw new IllegalStateException("Já existe um ativo com o Asset Tag: " + dto.getAssetTag());
+        }
+        // A validação de Serial Number pode ser adicionada aqui se necessário.
+
+        // Lógica de criação original preservada
         Peripheral entity = peripheralMapper.toEntity(dto);
 
         entity.setLocation(resolver.optionalLocation(dto.getLocationId()));
@@ -64,17 +78,27 @@ public class PeripheralService {
         Peripheral entity = peripheralRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Periférico não encontrado com o ID: " + id));
 
-        // Guarda estados antigos para comparação
+        // ====================================================================
+        // == VALIDAÇÃO DE UNICIDADE ADICIONADA AO UPDATE ==
+        // ====================================================================
+        if (dto.getPatrimonio() != null && !dto.getPatrimonio().isBlank() && !Objects.equals(entity.getPatrimonio(), dto.getPatrimonio())) {
+            if (assetRepository.existsByPatrimonio(dto.getPatrimonio())) {
+                throw new IllegalStateException("Já existe outro ativo com o número de patrimônio: " + dto.getPatrimonio());
+            }
+        }
+        if (dto.getAssetTag() != null && !dto.getAssetTag().isBlank() && !Objects.equals(entity.getAssetTag(), dto.getAssetTag())) {
+            if (assetRepository.existsByAssetTag(dto.getAssetTag())) {
+                throw new IllegalStateException("Já existe outro ativo com o Asset Tag: " + dto.getAssetTag());
+            }
+        }
+
+        // Lógica de "PUT Inteligente" original preservada
         Collaborator oldCollaborator = entity.getCollaborator();
         Location oldLocation = entity.getLocation();
         AssetStatus oldStatus = entity.getStatus();
 
-        // Aplica atualizações simples
         peripheralMapper.updateEntityFromDto(dto, entity);
-
-        // Lógica de auditoria para relacionamentos e status
         
-        // Verifica mudança de Colaborador
         Long newCollaboratorId = dto.getCollaboratorId();
         Long oldCollaboratorId = (oldCollaborator != null) ? oldCollaborator.getId() : null;
         if (!Objects.equals(oldCollaboratorId, newCollaboratorId)) {
@@ -88,15 +112,11 @@ public class PeripheralService {
             }
         }
         
-        // Verifica mudança de Localização
         Long newLocationId = dto.getLocationId();
         Long oldLocationId = (oldLocation != null) ? oldLocation.getId() : null;
         if (!Objects.equals(oldLocationId, newLocationId)) {
              if (newLocationId == null) {
                 entity.setLocation(null);
-                // ====================================================================
-                // == CORREÇÃO DE SEGURANÇA CONTRA NULLPOINTEREXCEPTION ==
-                // ====================================================================
                 String details = "Periférico desvinculado de sua localização anterior via atualização.";
                 if (oldLocation != null) {
                     details = "Periférico removido da localização PA " + oldLocation.getPaNumber() + " via atualização.";
@@ -109,12 +129,10 @@ public class PeripheralService {
             }
         }
 
-        // Verifica mudança de Status
         if (dto.getStatus() != null && !Objects.equals(oldStatus, dto.getStatus())) {
             assetHistoryService.registerEvent(entity, HistoryEventType.ATUALIZACAO, "Status do periférico alterado de '" + oldStatus.name() + "' para '" + dto.getStatus().name() + "'.", null);
         }
 
-        // Resolve outras relações
         if (dto.getComputerId() != null) {
             entity.setComputer(resolver.optionalComputer(dto.getComputerId()));
         }

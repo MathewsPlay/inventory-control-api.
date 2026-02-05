@@ -35,4 +35,7 @@ public class Component extends Asset {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "computer_id")
     private Computer computer;
+    
+   @Column(name = "component_type") 
+    private String type;
 }

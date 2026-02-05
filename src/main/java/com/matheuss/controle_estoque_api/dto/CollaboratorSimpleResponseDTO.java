@@ -6,5 +6,5 @@ import lombok.Data;
 public class CollaboratorSimpleResponseDTO {
     private Long id;
     private String name;
-    private String username;
+    private String matricula;
 }

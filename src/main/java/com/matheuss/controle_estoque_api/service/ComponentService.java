@@ -2,6 +2,7 @@ package com.matheuss.controle_estoque_api.service;
 
 import com.matheuss.controle_estoque_api.domain.Collaborator;
 import com.matheuss.controle_estoque_api.domain.Component;
+import com.matheuss.controle_estoque_api.domain.Computer;
 import com.matheuss.controle_estoque_api.domain.Location;
 import com.matheuss.controle_estoque_api.domain.enums.AssetStatus;
 import com.matheuss.controle_estoque_api.domain.history.HistoryEventType;
@@ -9,6 +10,7 @@ import com.matheuss.controle_estoque_api.dto.ComponentCreateDTO;
 import com.matheuss.controle_estoque_api.dto.ComponentResponseDTO;
 import com.matheuss.controle_estoque_api.dto.ComponentUpdateDTO;
 import com.matheuss.controle_estoque_api.mapper.ComponentMapper;
+import com.matheuss.controle_estoque_api.repository.AssetRepository; // 1. IMPORTAR
 import com.matheuss.controle_estoque_api.repository.ComponentRepository;
 import com.matheuss.controle_estoque_api.service.support.EntityResolver;
 import jakarta.persistence.EntityNotFoundException;
@@ -25,17 +27,29 @@ import java.util.stream.Collectors;
 public class ComponentService {
 
     private final ComponentRepository componentRepository;
+    private final AssetRepository assetRepository; // 2. ADICIONAR INJEÇÃO
     private final ComponentMapper componentMapper;
     private final AssetHistoryService assetHistoryService;
     private final EntityResolver resolver;
 
     @Transactional
     public ComponentResponseDTO createComponent(ComponentCreateDTO dto) {
+        // ====================================================================
+        // == LÓGICA DE VALIDAÇÃO DE UNICIDADE DOS IDENTIFICADORES ==
+        // ====================================================================
+        if (dto.getPatrimonio() != null && !dto.getPatrimonio().isBlank() && assetRepository.existsByPatrimonio(dto.getPatrimonio())) {
+            throw new IllegalStateException("Já existe um ativo com o número de patrimônio: " + dto.getPatrimonio());
+        }
+        if (dto.getAssetTag() != null && !dto.getAssetTag().isBlank() && assetRepository.existsByAssetTag(dto.getAssetTag())) {
+            throw new IllegalStateException("Já existe um ativo com o Asset Tag: " + dto.getAssetTag());
+        }
+
+        // Lógica de criação original, agora sem a associação com o computador
         Component entity = componentMapper.toEntity(dto);
 
         entity.setCategory(resolver.requireCategory(dto.getCategoryId()));
         entity.setLocation(resolver.optionalLocation(dto.getLocationId()));
-        entity.setComputer(resolver.optionalComputer(dto.getComputerId()));
+        entity.setComputer(null); // Garante que um componente novo nunca está instalado
 
         entity.setStatus(AssetStatus.EM_ESTOQUE);
         entity.setCollaborator(null);
@@ -66,15 +80,27 @@ public class ComponentService {
         Component entity = componentRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Componente não encontrado com o ID: " + id));
 
-        // Guarda estados antigos para comparação
+        // ====================================================================
+        // == VALIDAÇÃO DE UNICIDADE ADICIONADA AO UPDATE ==
+        // ====================================================================
+        if (dto.getPatrimonio() != null && !dto.getPatrimonio().isBlank() && !Objects.equals(entity.getPatrimonio(), dto.getPatrimonio())) {
+            if (assetRepository.existsByPatrimonio(dto.getPatrimonio())) {
+                throw new IllegalStateException("Já existe outro ativo com o número de patrimônio: " + dto.getPatrimonio());
+            }
+        }
+        if (dto.getAssetTag() != null && !dto.getAssetTag().isBlank() && !Objects.equals(entity.getAssetTag(), dto.getAssetTag())) {
+            if (assetRepository.existsByAssetTag(dto.getAssetTag())) {
+                throw new IllegalStateException("Já existe outro ativo com o Asset Tag: " + dto.getAssetTag());
+            }
+        }
+
+        // Lógica de "PUT Inteligente" original preservada
         Collaborator oldCollaborator = entity.getCollaborator();
         Location oldLocation = entity.getLocation();
         AssetStatus oldStatus = entity.getStatus();
 
-        // Aplica atualizações simples
         componentMapper.updateEntityFromDto(dto, entity);
 
-        // Lógica de auditoria para relacionamentos e status
         Long newCollaboratorId = dto.getCollaboratorId();
         Long oldCollaboratorId = (oldCollaborator != null) ? oldCollaborator.getId() : null;
         if (!Objects.equals(oldCollaboratorId, newCollaboratorId)) {
@@ -93,9 +119,6 @@ public class ComponentService {
         if (!Objects.equals(oldLocationId, newLocationId)) {
              if (newLocationId == null) {
                 entity.setLocation(null);
-                // ====================================================================
-                // == CORREÇÃO DE SEGURANÇA CONTRA NULLPOINTEREXCEPTION ==
-                // ====================================================================
                 String details = "Componente desvinculado de sua localização anterior via atualização.";
                 if (oldLocation != null) {
                     details = "Componente removido da localização PA " + oldLocation.getPaNumber() + " via atualização.";
@@ -112,11 +135,43 @@ public class ComponentService {
             assetHistoryService.registerEvent(entity, HistoryEventType.ATUALIZACAO, "Status do componente alterado de '" + oldStatus.name() + "' para '" + dto.getStatus().name() + "'.", null);
         }
 
-        // Resolve outras relações
         if (dto.getCategoryId() != null) entity.setCategory(resolver.requireCategory(dto.getCategoryId()));
         if (dto.getComputerId() != null) entity.setComputer(resolver.optionalComputer(dto.getComputerId()));
         
         Component updated = componentRepository.save(entity);
         return componentMapper.toResponseDTO(updated);
     }
+
+    @Transactional
+public ComponentResponseDTO installComponent(Long componentId, Long computerId) {
+    // 1. Usar o resolver para buscar as entidades (padrão do projeto)
+    Component component = resolver.requireComponent(componentId);
+    Computer computer = resolver.requireComputer(computerId);
+
+    // 2. Validações de negócio
+    if (component.getComputer() != null) {
+        throw new IllegalStateException("Operação não permitida: O componente já está instalado no computador com ID " + component.getComputer().getId());
+    }
+    if (component.getStatus() != AssetStatus.EM_ESTOQUE) {
+        throw new IllegalStateException("Operação não permitida: Apenas componentes 'EM ESTOQUE' podem ser instalados.");
+    }
+
+    // 3. Atualizar o estado do componente
+    component.setComputer(computer);
+    component.setStatus(AssetStatus.EM_USO);
+    component.setLocation(null);      // Garante que não está associado a um local físico
+    component.setCollaborator(null);  // Garante que não está associado a um colaborador
+
+    // 4. Salvar e capturar a entidade atualizada
+    Component updatedComponent = componentRepository.save(component);
+
+    // 5. Registrar o evento de histórico com detalhes
+    String details = String.format("Componente '%s' (Patrimônio: %s) instalado no computador '%s'.",
+            updatedComponent.getName(), updatedComponent.getPatrimonio(), computer.getName());
+    assetHistoryService.registerEvent(updatedComponent, HistoryEventType.INSTALACAO, details, null);
+
+    
+    // 6. Retornar o DTO, como o Controller espera
+    return componentMapper.toResponseDTO(updatedComponent);
+}
 }

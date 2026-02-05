@@ -11,8 +11,8 @@ import java.time.LocalDate;
 @Data
 public class ComponentCreateDTO {
 
-    @NotBlank(message = "A etiqueta do ativo (assetTag) é obrigatória.")
     private String assetTag;
+    private String patrimonio;
 
     // Pode vir nulo (backend define EM_ESTOQUE)
     private AssetStatus status;
@@ -22,6 +22,8 @@ public class ComponentCreateDTO {
 
     @NotNull(message = "A data de compra é obrigatória.")
     private LocalDate purchaseDate;
+
+
 
     private Long locationId;
     private String notes;
@@ -50,5 +52,4 @@ public class ComponentCreateDTO {
     @NotNull(message = "O ID da categoria é obrigatório.")
     private Long categoryId;
 
-    private Long computerId;
 }

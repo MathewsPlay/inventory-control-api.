@@ -10,6 +10,7 @@ import java.time.LocalDate;
 public class ComponentUpdateDTO {
 
     private String assetTag;
+    private String patrimonio;
     private AssetStatus status;
     private LocalDate purchaseDate;
     private Long locationId;
@@ -20,6 +21,7 @@ public class ComponentUpdateDTO {
     private Long collaboratorId;
     private Long categoryId;
     private Long computerId;
+
 
     private EquipmentState equipmentState;
     private String notes;

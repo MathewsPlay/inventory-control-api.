@@ -9,7 +9,7 @@ public class CollaboratorCreateDTO {
     private String name;
 
     @NotBlank(message = "O nome de usuário (matrícula/login) é obrigatório.")
-    private String username;
+    private String matricula;
 
     @NotBlank(message = "O departamento é obrigatório.")
     private String department;

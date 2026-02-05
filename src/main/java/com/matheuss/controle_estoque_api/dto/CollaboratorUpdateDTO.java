@@ -5,6 +5,6 @@ import lombok.Data;
 @Data
 public class CollaboratorUpdateDTO {
     private String name;
-    private String username;
+    private String matricula;
     private String department;
 }

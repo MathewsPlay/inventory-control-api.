@@ -3,7 +3,10 @@ package com.matheuss.controle_estoque_api.controller;
 import com.matheuss.controle_estoque_api.dto.ComputerCreateDTO;
 import com.matheuss.controle_estoque_api.dto.ComputerResponseDTO;
 import com.matheuss.controle_estoque_api.dto.ComputerUpdateDTO;
+import com.matheuss.controle_estoque_api.dto.SwapComponentRequestDTO;
 import com.matheuss.controle_estoque_api.service.ComputerService;
+
+import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -51,4 +54,18 @@ public class ComputerController {
         ComputerResponseDTO updatedComputer = computerService.updateComputer(id, computerDTO);
         return ResponseEntity.ok(updatedComputer);
     }
+
+    @Operation(summary = "Troca um componente instalado em um computador por outro que está em estoque.")
+@PatchMapping("/{computerId}/swap-component")
+public ResponseEntity<ComputerResponseDTO> swapComponent(
+        @PathVariable Long computerId,
+        @Valid @RequestBody SwapComponentRequestDTO dto) {
+            
+    ComputerResponseDTO updatedComputer = computerService.swapComponent(
+            computerId,
+            dto.getComponentToUninstallId(),
+            dto.getComponentToInstallId()
+    );
+    return ResponseEntity.ok(updatedComputer);
+}
 }

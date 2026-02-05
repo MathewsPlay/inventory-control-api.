@@ -4,8 +4,9 @@ public enum HistoryEventType {
     CRIACAO("Criação"),
     ALOCACAO("Alocação"),
     DEVOLUCAO("Devolução"),
-    ATUALIZACAO("Atualização"), // ADICIONADO
-    DESCARTE("Descarte");       // ADICIONADO
+    ATUALIZACAO("Atualização"),
+    DESCARTE("Descarte"),
+    INSTALACAO("Instalação"); 
 
     private final String description;
 

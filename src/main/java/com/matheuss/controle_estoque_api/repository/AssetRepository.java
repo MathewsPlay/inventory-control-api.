@@ -16,6 +16,23 @@ public interface AssetRepository extends JpaRepository<Asset, Long> {
      */
     Optional<Asset> findByAssetTag(String assetTag);
 
-    // O método 'boolean existsByCategoryId(Long categoryId);' foi removido daqui
-    // porque a entidade 'Asset' não possui a propriedade 'categoryId'.
+    // ====================================================================
+    // == NOVOS MÉTODOS PARA VALIDAÇÃO DE UNICIDADE ==
+    // ====================================================================
+
+    /**
+     * Verifica de forma otimizada se já existe um ativo com o número de patrimônio informado.
+     * @param patrimonio O número de patrimônio a ser verificado.
+     * @return true se o número de patrimônio já estiver em uso, false caso contrário.
+     */
+    boolean existsByPatrimonio(String patrimonio);
+
+    /**
+     * Verifica de forma otimizada se já existe um ativo com o Asset Tag informado.
+     * Este método é mais explícito que o findByAssetTag().isPresent() e pode ser mais performático.
+     * @param assetTag O Asset Tag a ser verificado.
+     * @return true se o Asset Tag já estiver em uso, false caso contrário.
+     */
+    boolean existsByAssetTag(String assetTag);
+
 }

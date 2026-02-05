@@ -10,6 +10,7 @@ import java.time.LocalDate;
 public class ComputerUpdateDTO {
 
     private String assetTag;
+     private String patrimonio;
     private AssetStatus status;
     private LocalDate purchaseDate;
     private Long categoryId;

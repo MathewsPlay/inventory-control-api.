@@ -32,8 +32,11 @@ public abstract class Asset {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, unique = true)
+    @Column(unique = true) 
     private String assetTag;
+
+     @Column(unique = true)
+    private String patrimonio;
 
     @Column(nullable = false)
     private LocalDate purchaseDate;

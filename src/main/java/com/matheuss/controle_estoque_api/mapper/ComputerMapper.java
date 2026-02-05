@@ -21,8 +21,8 @@ import java.util.List;
 public interface ComputerMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "category", ignore = true)   // service resolve por categoryId
-    @Mapping(target = "location", ignore = true)   // service resolve por locationId
+    @Mapping(target = "category", ignore = true)
+    @Mapping(target = "location", ignore = true)
     @Mapping(target = "collaborator", ignore = true)
     @Mapping(target = "history", ignore = true)
     @Mapping(target = "components", ignore = true)
@@ -35,9 +35,12 @@ public interface ComputerMapper {
     List<ComputerResponseDTO> toResponseDTOList(List<Computer> entities);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true) // Boa prática adicionar o id também
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "collaborator", ignore = true)
+    
+    @Mapping(target = "status", ignore = true) // Impede que o Mapper sobrescreva a lógica de status do Service.
     @Mapping(target = "history", ignore = true)
     @Mapping(target = "components", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
