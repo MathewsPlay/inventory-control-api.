@@ -15,10 +15,11 @@ public class PeripheralUpdateDTO {
     private LocalDate purchaseDate;
     private Long locationId;
 
-    // ====================================================================
-    // == CAMPO ADICIONADO PARA PERMITIR ATUALIZAÇÃO DE COLABORADOR ==
-    // ====================================================================
+   
     private Long collaboratorId;
+
+    
+    private Long categoryId;
 
     private String type;
     private String name;
@@ -30,7 +31,7 @@ public class PeripheralUpdateDTO {
     private EquipmentState equipmentState;
     private String notes;
 
-    // CAMPOS ADMINISTRATIVOS (EXCEL)
+    // CAMPOS ADMINISTRATIVOS 
     private LocalDate dataRecebimento;
     private String chamadoCompra;
     private String sc;

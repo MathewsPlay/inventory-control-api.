@@ -35,7 +35,7 @@ public abstract class Asset {
     @Column(unique = true) 
     private String assetTag;
 
-     @Column(unique = true)
+    @Column(unique = true)
     private String patrimonio;
 
     @Column(nullable = false)
@@ -71,11 +71,16 @@ public abstract class Asset {
     // ===========================
     // RELACIONAMENTOS
     // ===========================
+
+    // Adiciona a relação com Category na classe pai, para que todas as entidades filhas a herdem.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
+    private Category category;
+    
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "location_id")
-    // ====================================================================
-    // == CORREÇÃO FINAL APLICADA SEM ALTERAR A LÓGICA ==
-    // ====================================================================
     @Audited(targetAuditMode = RelationTargetAuditMode.NOT_AUDITED)
     private Location location;
 

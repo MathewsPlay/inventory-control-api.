@@ -15,9 +15,9 @@ import java.util.List;
 public interface ComponentMapper {
 
     @Mapping(target = "id", ignore = true)
-    @Mapping(target = "category", ignore = true)  // service resolve por categoryId
-    @Mapping(target = "location", ignore = true)  // service resolve por locationId
-    @Mapping(target = "computer", ignore = true)  // service resolve por computerId
+    @Mapping(target = "category", ignore = true)
+    @Mapping(target = "location", ignore = true)
+    @Mapping(target = "computer", ignore = true)
     @Mapping(target = "collaborator", ignore = true)
     @Mapping(target = "history", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
@@ -29,10 +29,15 @@ public interface ComponentMapper {
     List<ComponentResponseDTO> toResponseDTOList(List<Component> list);
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "id", ignore = true) // Boa prática
     @Mapping(target = "category", ignore = true)
     @Mapping(target = "location", ignore = true)
     @Mapping(target = "computer", ignore = true)
     @Mapping(target = "collaborator", ignore = true)
+    // ====================================================================
+    // == LINHA CRÍTICA ADICIONADA ==
+    // ====================================================================
+    @Mapping(target = "status", ignore = true) // Impede que o Mapper sobrescreva a lógica de status do Service.
     @Mapping(target = "history", ignore = true)
     @Mapping(target = "createdAt", ignore = true)
     @Mapping(target = "updatedAt", ignore = true)

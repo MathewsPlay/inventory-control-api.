@@ -7,12 +7,15 @@ import com.matheuss.controle_estoque_api.domain.Category;
 import com.matheuss.controle_estoque_api.domain.Collaborator;
 import com.matheuss.controle_estoque_api.domain.Computer;
 import com.matheuss.controle_estoque_api.domain.Location;
+import com.matheuss.controle_estoque_api.domain.Peripheral;
 import com.matheuss.controle_estoque_api.domain.Component; // 1. Mantemos o import da nossa entidade.
 import com.matheuss.controle_estoque_api.repository.CategoryRepository;
 import com.matheuss.controle_estoque_api.repository.CollaboratorRepository;
 import com.matheuss.controle_estoque_api.repository.ComponentRepository;
 import com.matheuss.controle_estoque_api.repository.ComputerRepository;
 import com.matheuss.controle_estoque_api.repository.LocationRepository;
+import com.matheuss.controle_estoque_api.repository.PeripheralRepository;
+
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 // 2. REMOVEMOS o import 'org.springframework.stereotype.Component' para evitar o conflito.
@@ -74,5 +77,13 @@ public class EntityResolver {
     if (id == null) return null;
     return collaboratorRepository.findById(id)
             .orElseThrow(() -> new EntityNotFoundException("Colaborador não encontrado com o ID: " + id));
+}
+private final PeripheralRepository peripheralRepository;
+
+// Adicione o método
+public Peripheral requirePeripheral(Long id) {
+    if (id == null) throw new IllegalStateException("O ID do periférico é obrigatório.");
+    return peripheralRepository.findById(id)
+            .orElseThrow(() -> new EntityNotFoundException("Periférico não encontrado com o ID: " + id));
 }
 }
