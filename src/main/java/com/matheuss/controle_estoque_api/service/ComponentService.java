@@ -12,9 +12,13 @@ import com.matheuss.controle_estoque_api.dto.ComponentUpdateDTO;
 import com.matheuss.controle_estoque_api.mapper.ComponentMapper;
 import com.matheuss.controle_estoque_api.repository.AssetRepository;
 import com.matheuss.controle_estoque_api.repository.ComponentRepository;
+import com.matheuss.controle_estoque_api.repository.specification.ComponentSpecification;
 import com.matheuss.controle_estoque_api.service.support.EntityResolver;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page; // Import adicionado
+import org.springframework.data.domain.Pageable; // Import adicionado
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -53,14 +57,22 @@ public class ComponentService {
         return componentMapper.toResponseDTO(saved);
     }
 
+    // ====================================================================
+    // == MÉTODO GETALL ATUALIZADO PARA PAGINAÇÃO ==
+    // ====================================================================
     @Transactional(readOnly = true)
-    public List<ComponentResponseDTO> getAllComponents() {
-        // LÓGICA EXISTENTE PRESERVADA
-        List<Component> components = componentRepository.findAllWithDetails();
-        return components.stream()
-                .map(componentMapper::toResponseDTO)
-                .collect(Collectors.toList());
-    }
+public Page<ComponentResponseDTO> getAllComponents(
+        AssetStatus status, String type, String name, Pageable pageable) {
+    
+    // Constrói a query dinâmica combinando os filtros.
+    Specification<Component> spec = Specification.where(ComponentSpecification.hasStatus(status))
+            .and(ComponentSpecification.typeContains(type))
+            .and(ComponentSpecification.nameContains(name));
+
+    Page<Component> componentPage = componentRepository.findAll(spec, pageable);
+    
+    return componentPage.map(componentMapper::toResponseDTO);
+}
 
     @Transactional(readOnly = true)
     public ComponentResponseDTO getComponentById(Long id) {
@@ -72,12 +84,11 @@ public class ComponentService {
 
     @Transactional
     public ComponentResponseDTO updateComponent(Long id, ComponentUpdateDTO dto) {
-        // 1. BUSCA DE ENTIDADES
+        // LÓGICA EXISTENTE PRESERVADA
         Component component = resolver.requireComponent(id);
         Location newLocation = resolver.optionalLocation(dto.getLocationId());
         Collaborator newCollaborator = resolver.optionalCollaborator(dto.getCollaboratorId());
 
-        // 2. VALIDAÇÃO DE UNICIDADE (Sua lógica, preservada)
         if (dto.getPatrimonio() != null && !dto.getPatrimonio().isBlank() && !Objects.equals(component.getPatrimonio(), dto.getPatrimonio())) {
             if (assetRepository.existsByPatrimonio(dto.getPatrimonio())) {
                 throw new IllegalStateException("Operação não permitida: Já existe outro ativo com o patrimônio: " + dto.getPatrimonio());
@@ -89,14 +100,11 @@ public class ComponentService {
             }
         }
 
-        // 3. ATUALIZAÇÃO DOS CAMPOS SIMPLES
-        // O Mapper NÃO deve mais atualizar location, collaborator e status.
         componentMapper.updateEntityFromDto(dto, component);
         if (dto.getCategoryId() != null) {
             component.setCategory(resolver.requireCategory(dto.getCategoryId()));
         }
 
-        // 4. LÓGICA DE ESTADO E ALOCAÇÃO
         Location oldLocation = component.getLocation();
         Collaborator oldCollaborator = component.getCollaborator();
 
@@ -116,7 +124,6 @@ public class ComponentService {
             component.setStatus(AssetStatus.EM_ESTOQUE);
         }
 
-        // 5. REGISTRO DE HISTÓRICO INTELIGENTE
         assetHistoryService.registerEvent(component, HistoryEventType.ATUALIZACAO, "Dados do ativo foram atualizados.", null);
 
         if (!Objects.equals(oldLocation, newLocation)) {
@@ -136,7 +143,6 @@ public class ComponentService {
             }
         }
 
-        // 6. SALVAR E RETORNAR
         Component updatedComponent = componentRepository.save(component);
         return componentMapper.toResponseDTO(updatedComponent);
     }

@@ -11,9 +11,13 @@ import com.matheuss.controle_estoque_api.dto.PeripheralUpdateDTO;
 import com.matheuss.controle_estoque_api.mapper.PeripheralMapper;
 import com.matheuss.controle_estoque_api.repository.AssetRepository;
 import com.matheuss.controle_estoque_api.repository.PeripheralRepository;
+import com.matheuss.controle_estoque_api.repository.specification.PeripheralSpecification;
 import com.matheuss.controle_estoque_api.service.support.EntityResolver;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page; // Import adicionado
+import org.springframework.data.domain.Pageable; // Import adicionado
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -51,14 +55,22 @@ public class PeripheralService {
         return peripheralMapper.toResponseDTO(saved);
     }
 
+    // ====================================================================
+    // == MÉTODO GETALL ATUALIZADO PARA PAGINAÇÃO ==
+    // ====================================================================
     @Transactional(readOnly = true)
-    public List<PeripheralResponseDTO> getAllPeripherals() {
-        // LÓGICA EXISTENTE PRESERVADA
-        List<Peripheral> peripherals = peripheralRepository.findAllWithDetails();
-        return peripherals.stream()
-                .map(peripheralMapper::toResponseDTO)
-                .collect(Collectors.toList());
-    }
+public Page<PeripheralResponseDTO> getAllPeripherals(
+        AssetStatus status, String type, String name, Pageable pageable) {
+    
+    // Constrói a query dinâmica combinando os filtros.
+    Specification<Peripheral> spec = Specification.where(PeripheralSpecification.hasStatus(status))
+            .and(PeripheralSpecification.typeContains(type))
+            .and(PeripheralSpecification.nameContains(name));
+
+    Page<Peripheral> peripheralPage = peripheralRepository.findAll(spec, pageable);
+    
+    return peripheralPage.map(peripheralMapper::toResponseDTO);
+}
 
     @Transactional(readOnly = true)
     public PeripheralResponseDTO getPeripheralById(Long id) {
@@ -70,12 +82,11 @@ public class PeripheralService {
 
     @Transactional
     public PeripheralResponseDTO updatePeripheral(Long id, PeripheralUpdateDTO dto) {
-        // 1. BUSCA DE ENTIDADES
-        Peripheral peripheral = resolver.requirePeripheral(id); // Usando o resolver para padronizar
+        // LÓGICA EXISTENTE PRESERVADA
+        Peripheral peripheral = resolver.requirePeripheral(id);
         Location newLocation = resolver.optionalLocation(dto.getLocationId());
         Collaborator newCollaborator = resolver.optionalCollaborator(dto.getCollaboratorId());
 
-        // 2. VALIDAÇÃO DE UNICIDADE (Sua lógica, preservada)
         if (dto.getPatrimonio() != null && !dto.getPatrimonio().isBlank() && !Objects.equals(peripheral.getPatrimonio(), dto.getPatrimonio())) {
             if (assetRepository.existsByPatrimonio(dto.getPatrimonio())) {
                 throw new IllegalStateException("Operação não permitida: Já existe outro ativo com o patrimônio: " + dto.getPatrimonio());
@@ -87,18 +98,14 @@ public class PeripheralService {
             }
         }
 
-        // 3. ATUALIZAÇÃO DOS CAMPOS SIMPLES
-        // O Mapper NÃO deve mais atualizar location, collaborator e status.
         peripheralMapper.updateEntityFromDto(dto, peripheral);
         if (dto.getCategoryId() != null) {
             peripheral.setCategory(resolver.requireCategory(dto.getCategoryId()));
         }
-        // A associação com o computador é tratada como um campo simples aqui
         if (dto.getComputerId() != null) {
             peripheral.setComputer(resolver.optionalComputer(dto.getComputerId()));
         }
 
-        // 4. LÓGICA DE ESTADO E ALOCAÇÃO
         Location oldLocation = peripheral.getLocation();
         Collaborator oldCollaborator = peripheral.getCollaborator();
 
@@ -115,7 +122,6 @@ public class PeripheralService {
             peripheral.setStatus(AssetStatus.EM_ESTOQUE);
         }
 
-        // 5. REGISTRO DE HISTÓRICO INTELIGENTE
         assetHistoryService.registerEvent(peripheral, HistoryEventType.ATUALIZACAO, "Dados do ativo foram atualizados.", null);
 
         if (!Objects.equals(oldLocation, newLocation)) {
@@ -135,7 +141,6 @@ public class PeripheralService {
             }
         }
 
-        // 6. SALVAR E RETORNAR
         Peripheral updatedPeripheral = peripheralRepository.save(peripheral);
         return peripheralMapper.toResponseDTO(updatedPeripheral);
     }

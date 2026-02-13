@@ -4,11 +4,12 @@ import com.matheuss.controle_estoque_api.domain.Component;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 
 import java.util.List;
 
 @Repository
-public interface ComponentRepository extends JpaRepository<Component, Long> {
+public interface ComponentRepository extends JpaRepository<Component, Long>, JpaSpecificationExecutor<Component> {
 
     // ====================================================================
     // == MÉTODO OTIMIZADO PARA EVITAR N+1 QUERIES ==

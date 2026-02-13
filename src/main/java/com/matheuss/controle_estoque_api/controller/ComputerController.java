@@ -1,5 +1,6 @@
 package com.matheuss.controle_estoque_api.controller;
 
+import com.matheuss.controle_estoque_api.domain.enums.AssetStatus; 
 import com.matheuss.controle_estoque_api.dto.ComputerCreateDTO;
 import com.matheuss.controle_estoque_api.dto.ComputerResponseDTO;
 import com.matheuss.controle_estoque_api.dto.ComputerUpdateDTO;
@@ -9,12 +10,13 @@ import com.matheuss.controle_estoque_api.service.ComputerService;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
-import java.util.List;
 
 @RestController
 @RequestMapping("/api/computers" )
@@ -34,11 +36,22 @@ public class ComputerController {
         return ResponseEntity.created(location).body(createdComputer);
     }
 
+    // Método atualizado para receber parâmetros de filtro.
     @GetMapping
-    public ResponseEntity<List<ComputerResponseDTO>> getAllComputers() {
-        List<ComputerResponseDTO> computers = computerService.getAllComputers();
-        return ResponseEntity.ok(computers);
-    }
+@Operation(summary = "Lista computadores com paginação, ordenação e filtros")
+public ResponseEntity<Page<ComputerResponseDTO>> getAllComputers(
+        // Parâmetros de filtro
+        @RequestParam(required = false) AssetStatus status,
+        @RequestParam(required = false) String name,
+        @RequestParam(required = false) String patrimonio,
+        @RequestParam(required = false) String serialNumber,
+        
+        // Paginação
+        Pageable pageable) {
+    
+    Page<ComputerResponseDTO> computersPage = computerService.getAllComputers(status, name, patrimonio, serialNumber, pageable);
+    return ResponseEntity.ok(computersPage);
+}
 
     @GetMapping("/{id}")
     public ResponseEntity<ComputerResponseDTO> getComputerById(@PathVariable Long id) {
@@ -46,9 +59,6 @@ public class ComputerController {
         return ResponseEntity.ok(computer);
     }
 
-    // ====================================================================
-    // == ENDPOINT DE ATUALIZAÇÃO REFINADO ==
-    // ====================================================================
     @PutMapping("/{id}")
     public ResponseEntity<ComputerResponseDTO> updateComputer(@PathVariable Long id, @RequestBody @Valid ComputerUpdateDTO computerDTO) {
         ComputerResponseDTO updatedComputer = computerService.updateComputer(id, computerDTO);
@@ -56,16 +66,16 @@ public class ComputerController {
     }
 
     @Operation(summary = "Troca um componente instalado em um computador por outro que está em estoque.")
-@PatchMapping("/{computerId}/swap-component")
-public ResponseEntity<ComputerResponseDTO> swapComponent(
-        @PathVariable Long computerId,
-        @Valid @RequestBody SwapComponentRequestDTO dto) {
-            
-    ComputerResponseDTO updatedComputer = computerService.swapComponent(
-            computerId,
-            dto.getComponentToUninstallId(),
-            dto.getComponentToInstallId()
-    );
-    return ResponseEntity.ok(updatedComputer);
-}
+    @PatchMapping("/{computerId}/swap-component")
+    public ResponseEntity<ComputerResponseDTO> swapComponent(
+            @PathVariable Long computerId,
+            @Valid @RequestBody SwapComponentRequestDTO dto) {
+        
+        ComputerResponseDTO updatedComputer = computerService.swapComponent(
+                computerId,
+                dto.getComponentToUninstallId(),
+                dto.getComponentToInstallId()
+        );
+        return ResponseEntity.ok(updatedComputer);
+    }
 }
